@@ -1,3 +1,4 @@
+use std::f64::consts;
 use rand::random;
 
 pub struct Mat {
@@ -30,17 +31,17 @@ impl Mat {
     }
 
     pub fn dot(&self, other: &Mat) -> Self {
-        let mut ans = vec![vec![0.0; other.rows]; self.cols];
+        let mut ans = vec![vec![0.0; other.cols]; self.rows];
         for i in 0..self.rows {
             for j in 0..other.cols {
-                for k in 0..other.rows {
+                for k in 0..self.rows {
                     ans[i][j] += self.arr[i][k] * other.arr[k][j];
                 }
             }
         }
         Self {
-            rows: self.cols,
-            cols: other.rows,
+            rows: self.rows,
+            cols: other.cols,
             arr: ans,
         }
     }
@@ -54,5 +55,19 @@ impl Mat {
             println!("");
         }
         println!("-----------------------");
+    }
+}
+
+fn sigmoid(mat: &Mat) -> Mat {
+    let mut arr = mat.arr.clone();
+    for i in 0..mat.rows {
+        for j in 0..mat.cols {
+            arr[i][j] = 1.0 / (1.0 + consts::E.powf(mat.arr[i][j]));
+        }
+    }
+    Mat {
+        rows: mat.rows,
+        cols: mat.cols,
+        arr,
     }
 }
