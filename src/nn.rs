@@ -1,6 +1,12 @@
 use std::f64::consts;
 use rand::random;
 
+macro_rules! square {
+    ($s:expr) => {
+        ($s)*($s)
+    }
+}
+
 pub struct Mat {
     pub rows: usize,
     pub cols: usize,
@@ -70,4 +76,23 @@ fn sigmoid(mat: &Mat) -> Mat {
         cols: mat.cols,
         arr,
     }
+}
+
+pub fn forward(input: &Mat, l1: &Mat, l2: &Mat) -> Mat {
+    let hidden = sigmoid(&input.dot(l1));
+    sigmoid(&hidden.dot(l2))
+}
+
+pub fn loss(output: &Mat, label: &Mat) -> Option<f64> {
+   match label.cols == output.cols && output.rows == 1 && label.rows == 1 {
+       false => None,
+       true => {
+           let mut cost = 0.0;
+           for i in 0..output.cols {
+               cost += square!(output.arr[0][i] - label.arr[0][i]);
+           }
+           cost /= output.cols as f64;
+           Some(cost)
+       },
+   }
 }
