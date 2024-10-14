@@ -7,6 +7,7 @@ macro_rules! square {
     }
 }
 
+#[derive(Debug)]
 pub struct Mat {
     pub rows: usize,
     pub cols: usize,
@@ -40,7 +41,7 @@ impl Mat {
         let mut ans = vec![vec![0.0; other.cols]; self.rows];
         for i in 0..self.rows {
             for j in 0..other.cols {
-                for k in 0..self.rows {
+                for k in 0..other.rows {
                     ans[i][j] += self.arr[i][k] * other.arr[k][j];
                 }
             }
@@ -53,14 +54,7 @@ impl Mat {
     }
 
     pub fn print(&self) {
-        println!("-----------------------");
-        for r in 0..self.arr.len() {
-            for c in 0..self.arr[r].len() {
-                print!("{}, ", self.arr[r][c]);
-            }
-            println!("");
-        }
-        println!("-----------------------");
+        println!("{:?}", self);
     }
 }
 
@@ -96,3 +90,7 @@ pub fn loss(output: &Mat, label: &Mat) -> Option<f64> {
        },
    }
 }
+
+// pub fn gradient(l1: &mut Mat, l2: &mut Mat, output: &Mat, label: &Mat) {
+//     let prev_loss = loss(output, label);
+// }
