@@ -19,16 +19,24 @@ fn main() {
         1.0,
     ];
 
-    let label = Mat::from(1, 1, labels[0..1].to_vec());
-
-    let input = Mat::from(1, 2, data[0..=1].to_vec());
-
-    let l1 = Mat::init(2, 2);
-    let l2 = Mat::init(2, 1);
+    let mut l1 = Mat::new(2, 2);
+    let mut l2 = Mat::new(2, 1);
 
     for i in 0..EPOCHS {
-        let out = forward(&input, &l1, &l2);
-        let c = loss(&out, &label);
-        println!("{:?}", c);
+        for j in 0..(labels.len()-1) {
+            let label = Mat::from(1, 1, labels[j..j+1].to_vec());
+            let input = Mat::from(1, 2, data[j..=j+1].to_vec());
+
+            let out = forward(&input, &l1, &l2);
+
+            let g1 = finite_diff1(&input, &out, &label, &mut l1, &l2);
+            let g2 = finite_diff2(&input, &out, &label, &l1, &mut l2);
+
+            l1.sum(&g1);
+            l2.sum(&g2);
+
+            let c = loss(&out, &label);
+            println!("{:?}", c);
+        }
     }
 }

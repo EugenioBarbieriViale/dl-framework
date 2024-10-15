@@ -8,7 +8,7 @@ pub struct Mat {
 }
 
 impl Mat {
-    pub fn init(rows: usize, cols: usize) -> Self {
+    pub fn new(rows: usize, cols: usize) -> Self {
         let mut elems: Vec<Vec<f64>> = vec![vec![0.0; cols]; rows];
         for i in 0..rows {
             for j in 0..cols {
@@ -28,6 +28,22 @@ impl Mat {
             cols,
             elems: elems_1d.chunks(cols).map(|v| v.to_vec()).collect::<Vec<_>>(),
         }
+    }
+
+    pub fn sum(&mut self, other: &Mat) {
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                self.elems[i][j] += other.elems[i][j];
+            } 
+        } 
+    }
+
+    pub fn sub(&mut self, other: &Mat) {
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                self.elems[i][j] -= other.elems[i][j];
+            } 
+        } 
     }
 
     pub fn dot(&self, other: &Mat) -> Self {
