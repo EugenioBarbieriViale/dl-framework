@@ -1,5 +1,6 @@
 mod nn;
-use crate::nn::*;
+
+use crate::nn::{*, matrix::Mat};
 
 const EPOCHS: u32 = 100;
 
