@@ -17,17 +17,9 @@ pub fn forward(input: &Mat, l1: &Mat, l2: &Mat) -> Mat {
 }
 
 pub fn loss(output: &Mat, label: &Mat) -> f64 {
-   // match label.cols == output.cols && output.rows == 1 && label.rows == 1 {
-   //     false => None,
-   //     true => {
-   //         let mut cost = 0.0;
-   //         for i in 0..output.cols {
-   //             cost += square!(output.elems[0][i] - label.elems[0][i]);
-   //         }
-   //         cost /= output.cols as f64;
-   //         Some(cost)
-   //     },
-   // }
+   if label.cols != output.cols || output.rows != 1 || label.rows != 1 {
+       panic!("Output or labels vector is not of the right dimensions");
+   }
 
    let mut cost = 0.0;
    for i in 0..output.cols {
@@ -46,7 +38,7 @@ pub fn finite_diff1(input: &Mat, out: &Mat, label: &Mat, l1: &mut Mat, l2: &Mat)
     for i in 0..l1.rows {
         for j in 0..l1.cols {
             l1.elems[i][j] += 1e-2;
-            g1.elems[i][j] = loss(&forward(&input, &l1, &l2), &label);
+            g1.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / 1e-2;
             l1.elems[i][j] -= 1e-2;
         }
     }
@@ -62,7 +54,7 @@ pub fn finite_diff2(input: &Mat, out: &Mat, label: &Mat, l1: &Mat, l2: &mut Mat)
     for i in 0..l2.rows {
         for j in 0..l2.cols {
             l2.elems[i][j] += 1e-2;
-            g2.elems[i][j] = loss(&forward(&input, &l1, &l2), &label);
+            g2.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / 1e-2;
             l2.elems[i][j] -= 1e-2;
         }
     }

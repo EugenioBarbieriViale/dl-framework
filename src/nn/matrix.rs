@@ -31,6 +31,10 @@ impl Mat {
     }
 
     pub fn sum(&mut self, other: &Mat) {
+        if self.rows != other.rows && self.cols != other.cols {
+            panic!("Cannot sum matrix {}x{} with {}x{}", self.rows, self.cols, other.rows, other.cols);
+        }
+
         for i in 0..self.rows {
             for j in 0..self.cols {
                 self.elems[i][j] += other.elems[i][j];
@@ -39,6 +43,10 @@ impl Mat {
     }
 
     pub fn sub(&mut self, other: &Mat) {
+        if self.rows != other.rows && self.cols != other.cols {
+            panic!("Cannot subtract matrix {}x{} and {}x{}", self.rows, self.cols, other.rows, other.cols);
+        }
+
         for i in 0..self.rows {
             for j in 0..self.cols {
                 self.elems[i][j] -= other.elems[i][j];
@@ -46,7 +54,19 @@ impl Mat {
         } 
     }
 
+    pub fn scalar_mult(&mut self, scalar: f64) {
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                self.elems[i][j] *= scalar;
+            } 
+        } 
+    }
+
     pub fn dot(&self, other: &Mat) -> Self {
+        if self.cols != other.rows {
+            panic!("Cannot multiply matrix {}x{} with {}x{}", self.rows, self.cols, other.rows, other.cols);
+        }
+
         let mut ans = vec![vec![0.0; other.cols]; self.rows];
         for i in 0..self.rows {
             for j in 0..other.cols {

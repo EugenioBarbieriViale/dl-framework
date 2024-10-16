@@ -2,14 +2,15 @@ mod nn;
 
 use crate::nn::{*, matrix::Mat};
 
-const EPOCHS: u32 = 100;
+const EPOCHS: u32 = 10000;
+const RATE: f64 = 1e-2;
 
 fn main() {
-    let data: Vec<f64> = vec![
-        0.0, 0.0,
-        0.0, 1.0,
-        1.0, 0.0,
-        1.0, 1.0,
+    let data: Vec<Vec<f64>> = vec![
+        vec![0.0, 0.0],
+        vec![0.0, 1.0],
+        vec![1.0, 0.0],
+        vec![1.0, 1.0],
     ];
 
     let labels: Vec<f64> = vec![
@@ -22,21 +23,32 @@ fn main() {
     let mut l1 = Mat::new(2, 2);
     let mut l2 = Mat::new(2, 1);
 
+    let mut out = Mat::new(2, 1);
+    let mut label = Mat::new(1, 1);
+
     for i in 0..EPOCHS {
-        for j in 0..(labels.len()-1) {
-            let label = Mat::from(1, 1, labels[j..j+1].to_vec());
-            let input = Mat::from(1, 2, data[j..=j+1].to_vec());
+        for j in 0..labels.len() {
+            let input = Mat::from(1, 2, data[j].clone());
+            label = Mat::from(1, 1, labels[j..j+1].to_vec());
 
-            let out = forward(&input, &l1, &l2);
+            out = forward(&input, &l1, &l2);
 
-            let g1 = finite_diff1(&input, &out, &label, &mut l1, &l2);
-            let g2 = finite_diff2(&input, &out, &label, &l1, &mut l2);
+            let mut g1 = finite_diff1(&input, &out, &label, &mut l1, &l2);
+            let mut g2 = finite_diff2(&input, &out, &label, &l1, &mut l2);
 
-            l1.sum(&g1);
-            l2.sum(&g2);
+            g1.scalar_mult(RATE);
+            g2.scalar_mult(RATE);
 
-            let c = loss(&out, &label);
-            println!("{:?}", c);
+            l1.sub(&g1);
+            l2.sub(&g2);
         }
+        let c = loss(&out, &label);
+        println!("{}", c);
+    }
+
+    for i in 0..4 {
+        let input = Mat::from(1, 2, data[i].clone());
+        let outf = forward(&input, &l1, &l2);
+        println!("{:?}: {:?} -> {:?}", &data[i], &labels[i], outf.elems);
     }
 }
