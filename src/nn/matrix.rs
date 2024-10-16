@@ -9,12 +9,29 @@ pub struct Mat {
 
 impl Mat {
     pub fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            rows,
+            cols,
+            elems: vec![vec![0.0; cols]; rows],
+        }
+    }
+
+    pub fn from(elems: Vec<Vec<f64>>) -> Self {
+        Self {
+            rows: elems.len(),
+            cols: elems[0].len(),
+            elems,
+        }
+    }
+
+    pub fn new_rand(rows: usize, cols: usize) -> Self {
         let mut elems: Vec<Vec<f64>> = vec![vec![0.0; cols]; rows];
         for i in 0..rows {
             for j in 0..cols {
                 elems[i][j] = random();
             }
         }
+
         Self {
             rows,
             cols,
@@ -22,7 +39,7 @@ impl Mat {
         }
     }
 
-    pub fn from(rows: usize, cols: usize, elems_1d: Vec<f64>) -> Self {
+    pub fn from_vec(rows: usize, cols: usize, elems_1d: Vec<f64>) -> Self {
         Self {
             rows,
             cols,
@@ -44,7 +61,7 @@ impl Mat {
 
     pub fn sub(&mut self, other: &Mat) {
         if self.rows != other.rows && self.cols != other.cols {
-            panic!("Cannot subtract matrix {}x{} and {}x{}", self.rows, self.cols, other.rows, other.cols);
+            panic!("Cannot subtract matrix {}x{} from {}x{}", other.rows, other.cols, self.rows, self.cols);
         }
 
         for i in 0..self.rows {

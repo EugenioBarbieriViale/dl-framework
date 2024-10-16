@@ -4,6 +4,8 @@ mod activation;
 use matrix::Mat;
 use activation::{Function, activate};
 
+const H: f64 = 1e-2;
+
 macro_rules! square {
     ($s:expr) => {
         ($s)*($s)
@@ -37,9 +39,9 @@ pub fn finite_diff1(input: &Mat, out: &Mat, label: &Mat, l1: &mut Mat, l2: &Mat)
 
     for i in 0..l1.rows {
         for j in 0..l1.cols {
-            l1.elems[i][j] += 1e-2;
-            g1.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / 1e-2;
-            l1.elems[i][j] -= 1e-2;
+            l1.elems[i][j] += H;
+            g1.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / H;
+            l1.elems[i][j] -= H;
         }
     }
     g1
@@ -53,9 +55,9 @@ pub fn finite_diff2(input: &Mat, out: &Mat, label: &Mat, l1: &Mat, l2: &mut Mat)
 
     for i in 0..l2.rows {
         for j in 0..l2.cols {
-            l2.elems[i][j] += 1e-2;
-            g2.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / 1e-2;
-            l2.elems[i][j] -= 1e-2;
+            l2.elems[i][j] += H;
+            g2.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / H;
+            l2.elems[i][j] -= H;
         }
     }
     g2
