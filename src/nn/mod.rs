@@ -1,5 +1,5 @@
 pub mod matrix;
-mod activation;
+pub mod activation;
 
 use matrix::Mat;
 use activation::{Function, activate};
@@ -12,53 +12,128 @@ macro_rules! square {
     }
 }
 
+pub struct Network {
+    act: Function,
 
-pub fn forward(input: &Mat, l1: &Mat, l2: &Mat) -> Mat {
-    let hidden = activate(&input.dot(l1), Function::SIGMOID);
-    activate(&hidden.dot(l2), Function::SIGMOID)
+    w1: Mat,
+    b1: Mat,
+
+    w2: Mat,
+    b2: Mat,
+
+    pub out: Mat,
 }
 
-pub fn loss(output: &Mat, label: &Mat) -> f64 {
-   if label.cols != output.cols || output.rows != 1 || label.rows != 1 {
-       panic!("Output or labels vector is not of the right dimensions");
-   }
+impl Network {
+    pub fn new(act: Function) -> Self {
+        Self {
+            act,
 
-   let mut cost = 0.0;
-   for i in 0..output.cols {
-       cost += square!(output.elems[0][i] - label.elems[0][i]);
-   }
-   cost /= output.cols as f64;
-   cost
-}
+            w1: Mat::new(2, 2),
+            b1: Mat::new(1, 2),
 
-pub fn finite_diff1(input: &Mat, out: &Mat, label: &Mat, l1: &mut Mat, l2: &Mat) -> Mat {
-    let out = forward(&input, &l1, &l2);
-    let prev_loss = loss(&out, &label);
+            w2: Mat::new(2, 1),
+            b2: Mat::new(1, 1),
 
-    let mut g1 = Mat::new(l1.rows, l1.cols);
-
-    for i in 0..l1.rows {
-        for j in 0..l1.cols {
-            l1.elems[i][j] += H;
-            g1.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / H;
-            l1.elems[i][j] -= H;
+            out: Mat::new(2, 1),
         }
     }
-    g1
-}
 
-pub fn finite_diff2(input: &Mat, out: &Mat, label: &Mat, l1: &Mat, l2: &mut Mat) -> Mat {
-    let out = forward(&input, &l1, &l2);
-    let prev_loss = loss(&out, &label);
+    pub fn new_rand(act: Function) -> Self {
+        Self {
+            act,
 
-    let mut g2 = Mat::new(l2.rows, l2.cols);
+            w1: Mat::new_rand(2, 2),
+            b1: Mat::new_rand(1, 2),
 
-    for i in 0..l2.rows {
-        for j in 0..l2.cols {
-            l2.elems[i][j] += H;
-            g2.elems[i][j] = (loss(&forward(&input, &l1, &l2), &label) - prev_loss) / H;
-            l2.elems[i][j] -= H;
+            w2: Mat::new_rand(2, 1),
+            b2: Mat::new_rand(1, 1),
+
+            out: Mat::new(2, 1),
         }
     }
-    g2
+
+    pub fn forward(&self, input: &Mat) -> Mat {
+        let o1 = &mut input.dot(&self.w1);
+        o1.sum(&self.b1);
+        let a1 = activate(o1, self.act);
+
+        let o2 = &mut a1.dot(&self.w2);
+        o2.sum(&self.b2);
+
+        activate(o2, self.act)
+    }
+
+    pub fn loss(&self, out: &Mat, label: &Mat) -> f64 {
+       if label.cols != out.cols || out.rows != 1 || label.rows != 1 {
+           panic!("Output or labels vector is not of the right dimensions");
+       }
+
+       let mut cost = 0.0;
+       for i in 0..out.cols {
+           cost += square!(out.elems[0][i] - label.elems[0][i]);
+       }
+       cost /= out.cols as f64;
+       cost
+    }
+
+    // TODO clone self, not mut
+    fn finite_diff(&mut self, input: &Mat, label: &Mat) -> Self {
+        let mut g = Self::new(self.act);
+        let prev_loss = self.loss(&self.out, label);
+
+        for i in 0..self.w1.rows {
+            for j in 0..self.w1.cols {
+                self.w1.elems[i][j] += H;
+                g.w1.elems[i][j] = (self.loss(&self.forward(input), label) - prev_loss) / H;
+                self.w1.elems[i][j] -= H;
+            }
+        }
+
+        for i in 0..self.b1.rows {
+            for j in 0..self.b1.cols {
+                self.b1.elems[i][j] += H;
+                g.b1.elems[i][j] = (self.loss(&self.forward(input), label) - prev_loss) / H;
+                self.b1.elems[i][j] -= H;
+            }
+        }
+
+        for i in 0..self.w2.rows {
+            for j in 0..self.w2.cols {
+                self.w2.elems[i][j] += H;
+                g.w2.elems[i][j] = (self.loss(&self.forward(input), label) - prev_loss) / H;
+                self.w2.elems[i][j] -= H;
+            }
+        }
+
+        for i in 0..self.b2.rows {
+            for j in 0..self.b2.cols {
+                self.b2.elems[i][j] += H;
+                g.b2.elems[i][j] = (self.loss(&self.forward(input), label) - prev_loss) / H;
+                self.b2.elems[i][j] -= H;
+            }
+        }
+        g
+    }
+
+    pub fn update(&mut self, input: &Mat, label: &Mat, rate: f64) {
+        let mut g = self.finite_diff(input, label);
+
+        g.w1.scalar_mult(rate);
+        g.b1.scalar_mult(rate);
+                              
+        g.w2.scalar_mult(rate);
+        g.b2.scalar_mult(rate);
+
+        self.w1.sub(&g.w1);
+        self.b1.sub(&g.b1);
+
+        self.w2.sub(&g.w2);
+        self.b2.sub(&g.b2);
+    }
+
+    pub fn show_net(&self, input: &Mat, label: &Mat) {
+        let show_out = self.forward(&input);
+        println!("{:?}: {:?} -> {:?}", input.elems, label.elems, show_out.elems);
+    }
 }

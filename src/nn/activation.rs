@@ -8,6 +8,14 @@ pub enum Function {
     SOFTMAX,
 }
 
+impl Copy for Function {}
+
+impl Clone for Function {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + E.powf(x))
 }
