@@ -77,7 +77,6 @@ impl Network {
        cost
     }
 
-    // TODO clone self, not mut
     fn finite_diff(&mut self, input: &Mat, label: &Mat) -> Self {
         let mut g = Self::new(self.act);
         let prev_loss = self.loss(&self.out, label);
