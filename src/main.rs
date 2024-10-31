@@ -41,6 +41,8 @@ fn main() {
         println!("{cost}");
     }
 
+    net.show_params();
+
     for i in 0..4 {
         input = Mat::from_vec(1, 2, data[i].clone());
         label = Mat::from_vec(1, 1, labels[i..i+1].to_vec());

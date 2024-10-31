@@ -150,8 +150,8 @@ impl Network {
     }
 
     pub fn show_params(&self) {
-        println!("{:#?}", self.ws);
-        println!("{:#?}", self.bs);
+        println!("WEIGHTS: {:#?}", self.ws);
+        println!("BIASES: {:#?}", self.bs);
     }
 
     pub fn show(&mut self, input: &Mat, label: &Mat) {
