@@ -1,20 +1,13 @@
 use crate::nn::matrix::Mat;
 use std::f64::consts::E;
 
+#[derive(Copy, Clone)]
 pub enum Function {
     SIGMOID,
     RELU,
     LEAKY_RELU(f64),
     TANH,
     SOFTMAX,
-}
-
-impl Copy for Function {}
-
-impl Clone for Function {
-    fn clone(&self) -> Self {
-        *self
-    }
 }
 
 fn sigmoid(x: f64) -> f64 {
