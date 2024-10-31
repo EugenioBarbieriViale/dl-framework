@@ -1,6 +1,6 @@
 use rand::random;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mat {
     pub rows: usize,
     pub cols: usize,

@@ -20,27 +20,30 @@ fn main() {
         0.0,
     ];
 
-    let mut net = Network::new_rand(Function::SIGMOID);
+    let arch = vec![2, 2, 1];
+
+    let mut net = Network::new_rand(arch, Function::SIGMOID);
 
     let mut input = Mat::new(1, 1);
     let mut label = Mat::new(1, 1);
+    let mut out = Mat::new(1, 1);
 
     for i in 0..EPOCHS {
         for j in 0..labels.len() {
             input = Mat::from_vec(1, 2, data[j].clone());
             label = Mat::from_vec(1, 1, labels[j..j+1].to_vec());
 
-            net.out = net.forward(&input);
+            out = net.forward(&input);
             net.update(&input, &label, RATE);
         }
 
-        let cost = net.loss(&net.out, &label);
+        let cost = net.loss(&out, &label);
         println!("{cost}");
     }
 
     for i in 0..4 {
         input = Mat::from_vec(1, 2, data[i].clone());
         label = Mat::from_vec(1, 1, labels[i..i+1].to_vec());
-        net.show_net(&input, &label);
+        net.show(&input, &label);
     }
 }
