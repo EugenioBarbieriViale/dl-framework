@@ -39,11 +39,19 @@ impl Mat {
         }
     }
 
-    pub fn from_vec(rows: usize, cols: usize, elems_1d: Vec<f64>) -> Self {
+    pub fn from_vec(rows: usize, cols: usize, elems_1d: &Vec<f64>) -> Self {
         Self {
             rows,
             cols,
             elems: elems_1d.chunks(cols).map(|v| v.to_vec()).collect::<Vec<_>>(),
+        }
+    }
+
+    pub fn from_scalar(n: f64) -> Self {
+        Self {
+            rows: 1,
+            cols: 1,
+            elems: vec![vec![n]],
         }
     }
 

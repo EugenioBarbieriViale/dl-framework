@@ -4,7 +4,7 @@ pub mod activation;
 use matrix::Mat;
 use activation::{Function, activate};
 
-const H: f64 = 1e-2;
+const H: f64 = 1e-4;
 
 macro_rules! square {
     ($s:expr) => {
