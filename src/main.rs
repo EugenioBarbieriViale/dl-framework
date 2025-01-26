@@ -2,7 +2,7 @@ mod nn;
 
 use crate::nn::{*, matrix::Mat, activation::Function};
 
-const EPOCHS: u32 = 100000;
+const EPOCHS: u32 = 10000;
 const RATE: f64 = 1.0;
 
 fn main() {
