@@ -9,13 +9,12 @@ use super::Hyperparams;
 
 pub struct Net {
     layers: usize,
-    arch: Vec<usize>,
     loss_function: LossFunction,
     weights: Vec<DMatrix<f64>>,
     biases: Vec<DMatrix<f64>>,
     zs: Vec<DMatrix<f64>>,
     activations: Vec<DMatrix<f64>>,
-    cost: f64,
+    pub cost: f64,
 }
 
 impl Net {
@@ -49,7 +48,6 @@ impl Net {
 
         Net {
             layers,
-            arch,
             loss_function,
             weights,
             biases,
@@ -130,27 +128,15 @@ impl Net {
 
     pub fn train(
         &mut self,
-        input: &DMatrix<f64>,
-        label: &DMatrix<f64>,
-        params: Hyperparams,
+        x: &DMatrix<f64>,
+        y: &DMatrix<f64>,
+        params: &Hyperparams,
         act_func: &ActivationFunction,
     ) {
 
-        for e in 0..params.epochs {
-            let col_input: Vec<f64> = input.column(e % 4).iter().cloned().collect();
-            let x = DMatrix::from_vec(input.nrows(), 1, col_input);
-
-            let col_label: Vec<f64> = label.column(e % 4).iter().cloned().collect();
-            let y = DMatrix::from_vec(label.nrows(), 1, col_label);
-
-            let out = self.forward(&x, act_func);
-            self.cost = self.loss_function.compute(&out, &y);
-            self.backward(&y, params.learning_rate, &act_func);
-
-            if e % 100 == 0 {
-                println!("Epoch: {},  cost: {}", e, self.cost);
-            }
-        }        
+        let out = self.forward(&x, act_func);
+        self.cost = self.loss_function.compute(&out, &y);
+        self.backward(&y, params.learning_rate, &act_func);
     }
 
     pub fn predict(&mut self, x: &DMatrix<f64>, act_func: &ActivationFunction) -> DMatrix<f64> {
