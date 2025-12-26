@@ -3,8 +3,8 @@ mod net;
 use nalgebra::DMatrix;
 
 use crate::net::Net;
-use net::cost_funcs::LossFunction;
-use net::act_funcs::ActivationFunction;
+use net::functions::LossFunction;
+use net::functions::ActivationFunction;
 
 
 pub struct Hyperparams {
@@ -16,7 +16,7 @@ impl Hyperparams {
     pub fn new() -> Self {
         Hyperparams {
             epochs: 10000,
-            learning_rate: 0.5,
+            learning_rate: 1e-2,
         }
     }
 }
@@ -36,16 +36,17 @@ fn main() {
 
     let params = Hyperparams::new();
     let loss_func = LossFunction::SquaredError;
-    let act_func = ActivationFunction::Sigmoid;
+    let act_funcs = vec![ActivationFunction::ReLU; 3];
+    // let act_funcs = vec![ActivationFunction::Sigmoid; 3];
 
-    let mut net = Net::new(arch, loss_func);
+    let mut net = Net::new(arch, act_funcs, loss_func);
 
     for e in 0..params.epochs {
         for i in 0..4 {
             let x = get_col(i, &data);
             let y = get_col(i, &label);
 
-            net.train(&x, &y, &params, &act_func);
+            net.train(&x, &y, &params);
         }
 
         if e % 100 == 0 {
@@ -57,7 +58,7 @@ fn main() {
         let x = get_col(i, &data);
         let y = get_col(i, &label);
 
-        let out = net.predict(&x, &act_func);
+        let out = net.predict(&x);
 
         println!("{}, {} -> {}: {}", x[(0, 0)], x[(1, 0)], y[(0, 0)], out[(0, 0)]);
     }

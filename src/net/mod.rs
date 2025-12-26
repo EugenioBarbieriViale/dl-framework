@@ -1,24 +1,32 @@
-pub mod cost_funcs;
-pub mod act_funcs;
+pub mod functions;
 
 use nalgebra::DMatrix;
-use cost_funcs::LossFunction;
-use act_funcs::ActivationFunction;
+use functions::LossFunction;
+use functions::ActivationFunction;
 use super::Hyperparams;
 
 
 pub struct Net {
     layers: usize,
+
+    act_functions: Vec<ActivationFunction>,
     loss_function: LossFunction,
+
     weights: Vec<DMatrix<f64>>,
     biases: Vec<DMatrix<f64>>,
     zs: Vec<DMatrix<f64>>,
     activations: Vec<DMatrix<f64>>,
+
     pub cost: f64,
 }
 
 impl Net {
-    pub fn new(arch: Vec<usize>, loss_function: LossFunction) -> Self {
+    pub fn new(arch: Vec<usize>, act_functions: Vec<ActivationFunction>, loss_function: LossFunction) -> Self {
+        if arch.len() != act_functions.len() {
+            panic!("Network and activation functions sizes mismatch ({}, {})", 
+                arch.len(), act_functions.len());
+        }
+
         let layers = arch.len() - 1;
 
         let mut weights = Vec::new();
@@ -48,6 +56,7 @@ impl Net {
 
         Net {
             layers,
+            act_functions,
             loss_function,
             weights,
             biases,
@@ -57,25 +66,12 @@ impl Net {
         }
     }
 
-    fn forward(&mut self, x: &DMatrix<f64>, act_func: &ActivationFunction) -> DMatrix<f64> {
+    fn forward(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
         self.activations[0] = x.clone();
 
         for i in 0..self.layers {
-            // println!("{}", self.activations[i]);
-            // println!("{}", self.weights[i]);
-
-            // self.zs[i] = (&self.weights[i] * &self.activations[i]) + &self.biases[i];
-            // self.activations[i+1] = act_func.compute(&self.zs[i]);
-            
-            let weighted_sum = &self.weights[i] * &self.activations[i];
-            let num_samples = weighted_sum.ncols();
-            
-            // Broadcast bias across all samples
-            self.zs[i] = DMatrix::from_fn(weighted_sum.nrows(), num_samples, |row, col| {
-                weighted_sum[(row, col)] + self.biases[i][(row, 0)]
-            });
-            
-            self.activations[i + 1] = act_func.compute(&self.zs[i]);
+            self.zs[i] = (&self.weights[i] * &self.activations[i]) + &self.biases[i];
+            self.activations[i+1] = self.act_functions[i].compute(&self.zs[i]);
         }
 
         self.activations.last().unwrap().clone()
@@ -97,7 +93,6 @@ impl Net {
         &mut self,
         y: &DMatrix<f64>,
         learning_rate: f64,
-        act_func: &ActivationFunction,
     ) {
         let batch_size = y.ncols() as f64;
 
@@ -105,7 +100,8 @@ impl Net {
         
         let out = &self.activations[self.layers];
         let loss_grad = self.loss_function.gradient(out, y);
-        let activation_deriv = act_func.derivative(&self.zs[self.layers - 1]);
+        let activation_deriv = self.act_functions[self.layers - 1]
+            .derivative(&self.zs[self.layers - 1]);
         let mut delta = loss_grad.component_mul(&activation_deriv);
         
         nabla_w[self.layers - 1] = &delta * self.activations[self.layers - 1].transpose();
@@ -113,7 +109,7 @@ impl Net {
         
         for l in (0..self.layers - 1).rev() {
             delta = self.weights[l + 1].transpose() * &delta;
-            let activation_deriv = act_func.derivative(&self.zs[l]);
+            let activation_deriv = self.act_functions[l].derivative(&self.zs[l]);
             delta = delta.component_mul(&activation_deriv);
             
             nabla_w[l] = &delta * self.activations[l].transpose();
@@ -131,15 +127,14 @@ impl Net {
         x: &DMatrix<f64>,
         y: &DMatrix<f64>,
         params: &Hyperparams,
-        act_func: &ActivationFunction,
     ) {
 
-        let out = self.forward(&x, act_func);
+        let out = self.forward(&x);
         self.cost = self.loss_function.compute(&out, &y);
-        self.backward(&y, params.learning_rate, &act_func);
+        self.backward(&y, params.learning_rate);
     }
 
-    pub fn predict(&mut self, x: &DMatrix<f64>, act_func: &ActivationFunction) -> DMatrix<f64> {
-        self.forward(x, act_func)
+    pub fn predict(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
+        self.forward(x)
     }
 }
