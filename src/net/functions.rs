@@ -55,14 +55,18 @@ impl LossFunction {
             LossFunction::SquaredError => {
                 (y_pred - y_true).map(|x| x * x).sum() / y_pred.len() as f64
             }
-            LossFunction::CrossEntropy => -(y_pred.map(|x| x.log(E)).component_mul(y_true)).sum(),
+            LossFunction::CrossEntropy => -(y_pred
+                .map(|x| x.clamp(1e-7, 1.0 - 1e-7).log(E))
+                // .map(|x| x.log(E))
+                .component_mul(y_true))
+            .sum(),
         }
     }
 
     pub fn gradient(&self, y_pred: &DMatrix<f64>, y_true: &DMatrix<f64>) -> DMatrix<f64> {
         match self {
             LossFunction::SquaredError => (y_pred - y_true) * 2.0,
-            LossFunction::CrossEntropy => y_pred - y_true,
+            LossFunction::CrossEntropy => -y_true.component_div(&y_pred),
         }
     }
 }

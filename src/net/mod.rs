@@ -4,6 +4,7 @@ use functions::LossFunction;
 
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::fs::{File, create_dir, exists, read_to_string};
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -90,17 +91,6 @@ impl Net {
         }
     }
 
-    fn forward(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
-        self.activations[0] = x.clone();
-
-        for i in 0..self.layers {
-            self.zs[i] = (&self.params.weights[i] * &self.activations[i]) + &self.params.biases[i];
-            self.activations[i + 1] = self.act_functions[i].compute(&self.zs[i]);
-        }
-
-        self.activations.last().unwrap().clone()
-    }
-
     fn init_gradients(&self) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
         let mut nabla_w: Vec<DMatrix<f64>> = Vec::with_capacity(self.layers);
         let mut nabla_b: Vec<DMatrix<f64>> = Vec::with_capacity(self.layers);
@@ -119,6 +109,17 @@ impl Net {
         (nabla_w, nabla_b)
     }
 
+    fn forward(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
+        self.activations[0] = x.clone(); // slow
+
+        for i in 0..self.layers {
+            self.zs[i] = (&self.params.weights[i] * &self.activations[i]) + &self.params.biases[i];
+            self.activations[i + 1] = self.act_functions[i].compute(&self.zs[i]);
+        }
+
+        self.activations.last().unwrap().clone() // slow
+    }
+
     fn backward(
         &mut self,
         y: &DMatrix<f64>,
@@ -126,7 +127,7 @@ impl Net {
         nabla_b: &mut Vec<DMatrix<f64>>,
         learning_rate: f64,
     ) {
-        let batch_size = y.ncols() as f64;
+        // let batch_size = y.ncols() as f64; // slow
 
         let out = &self.activations[self.layers];
         let loss_grad = self.loss_function.gradient(out, y);
@@ -147,8 +148,10 @@ impl Net {
         }
 
         for l in 0..self.layers {
-            self.params.weights[l] -= &nabla_w[l] * (learning_rate / batch_size);
-            self.params.biases[l] -= &nabla_b[l] * (learning_rate / batch_size);
+            // self.params.weights[l] -= &nabla_w[l] * (learning_rate / batch_size);
+            // self.params.biases[l] -= &nabla_b[l] * (learning_rate / batch_size);
+            self.params.weights[l] -= &nabla_w[l] * learning_rate;
+            self.params.biases[l] -= &nabla_b[l] * learning_rate;
         }
     }
 
@@ -163,17 +166,16 @@ impl Net {
         let (mut nabla_w, mut nabla_b) = self.init_gradients();
 
         for e in 0..params.epochs {
-            let mut c = 0;
+            let mut c = 0.0;
             for (x, y) in data.into_iter().zip(classes.into_iter()) {
                 let out = self.forward(&x);
                 self.cost = self.loss_function.compute(&out, &y);
                 self.backward(&y, &mut nabla_w, &mut nabla_b, params.learning_rate);
-
-                c += 1;
-                println!("{} -> [{}%]", c, c / len * 100);
+                c += 1.0;
+                println!("{:.2}%: {}", c / (len as f32), self.cost);
             }
-            println!("\n-------------------------------");
-            println!("Epoch: {} cost: {}\n", e + 1, self.cost);
+            println!("\n----------------------------------");
+            println!("Epoch {} done with final cost: {}\n", e + 1, self.cost);
         }
     }
 
