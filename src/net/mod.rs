@@ -4,13 +4,13 @@ use functions::LossFunction;
 
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{File, create_dir, exists, read_to_string};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
 pub mod functions;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NetParams {
     weights: Vec<DMatrix<f64>>,
     biases: Vec<DMatrix<f64>>,
@@ -36,13 +36,14 @@ impl NetParams {
     }
 }
 
+#[derive(Debug)]
 pub struct Net {
     layers: usize,
 
     act_functions: Vec<ActivationFunction>,
     loss_function: LossFunction,
 
-    params: NetParams,
+    pub params: NetParams,
     zs: Vec<DMatrix<f64>>,
     activations: Vec<DMatrix<f64>>,
 
@@ -100,7 +101,7 @@ impl Net {
         self.activations.last().unwrap().clone()
     }
 
-    pub fn init_gradients(&self) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
+    fn init_gradients(&self) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
         let mut nabla_w: Vec<DMatrix<f64>> = Vec::with_capacity(self.layers);
         let mut nabla_b: Vec<DMatrix<f64>> = Vec::with_capacity(self.layers);
 
@@ -153,22 +154,42 @@ impl Net {
 
     pub fn train(
         &mut self,
-        x: &DMatrix<f64>,
-        y: &DMatrix<f64>,
-        nabla_w: &mut Vec<DMatrix<f64>>,
-        nabla_b: &mut Vec<DMatrix<f64>>,
+        data: &Vec<DMatrix<f64>>,
+        classes: &Vec<DMatrix<f64>>,
         params: &Hyperparams,
     ) {
-        let out = self.forward(&x);
-        self.cost = self.loss_function.compute(&out, &y);
-        self.backward(&y, nabla_w, nabla_b, params.learning_rate);
+        let len = data.len();
+        assert_eq!(len, classes.len());
+        let (mut nabla_w, mut nabla_b) = self.init_gradients();
+
+        for e in 0..params.epochs {
+            let mut c = 0;
+            for (x, y) in data.into_iter().zip(classes.into_iter()) {
+                let out = self.forward(&x);
+                self.cost = self.loss_function.compute(&out, &y);
+                self.backward(&y, &mut nabla_w, &mut nabla_b, params.learning_rate);
+
+                c += 1;
+                println!("{} -> [{}%]", c, c / len * 100);
+            }
+            println!("\n-------------------------------");
+            println!("Epoch: {} cost: {}\n", e + 1, self.cost);
+        }
     }
 
+    #[allow(unused)]
     pub fn predict(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
         self.forward(x)
     }
 
+    #[allow(unused)]
     pub fn save_to(&self, path: &Path) -> std::io::Result<()> {
+        let dir_path = path.parent().unwrap();
+        match create_dir(dir_path) {
+            Ok(_) => (),
+            Err(_) => println!("Directory {:?} already exists, not creating.", dir_path),
+        }
+
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
 
@@ -176,5 +197,13 @@ impl Net {
         writer.flush()?;
 
         Ok(())
+    }
+
+    #[allow(unused)]
+    pub fn load_from(&self, path: &Path) -> std::io::Result<NetParams> {
+        exists(path).expect(&format!("Model not found in path {:?}", path));
+        let params_str = read_to_string(path)?;
+        let params: NetParams = serde_json::from_str(&params_str)?;
+        Ok(params)
     }
 }

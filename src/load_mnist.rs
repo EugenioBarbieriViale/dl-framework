@@ -1,9 +1,10 @@
 use nalgebra::DMatrix;
 
+use byteorder::{BigEndian, ReadBytesExt};
+use flate2::read::GzDecoder;
 use std::fs::File;
 use std::io::{Cursor, Read};
-use flate2::read::GzDecoder;
-use byteorder::{BigEndian, ReadBytesExt};
+use std::path::Path;
 
 struct MnistData {
     sizes: Vec<i32>,
@@ -15,7 +16,7 @@ impl MnistData {
         let mut gz = GzDecoder::new(f);
         let mut contents: Vec<u8> = Vec::new();
         gz.read_to_end(&mut contents)?;
-        
+
         let mut r = Cursor::new(&contents);
         let magic_number = r.read_i32::<BigEndian>()?;
 
@@ -39,17 +40,20 @@ impl MnistData {
     }
 }
 
-pub struct MnistImage {
-    pub image: DMatrix<f64>,
-    pub class: DMatrix<f64>,
+pub struct MnistDataset {
+    pub images: Vec<DMatrix<f64>>,
+    pub classes: Vec<DMatrix<f64>>,
 }
 
-pub fn load_data(dataset_name: &str) -> Result<Vec<MnistImage>, std::io::Error> {
-    let filename = format!("{}-labels.idx1-ubyte.gz", dataset_name);
-    let label_data = &MnistData::new(&(File::open(filename))?)?;
-    let filename = format!("{}-images.idx3-ubyte.gz", dataset_name);
+pub fn load_data(dataset_name: &str) -> Result<MnistDataset, std::io::Error> {
+    let path = format!("{}-labels.idx1-ubyte.gz", dataset_name);
+    let path = Path::new(&path);
+    let label_data = &MnistData::new(&(File::open(path))?)?;
 
-    let images_data = &MnistData::new(&(File::open(filename))?)?;
+    let path = format!("{}-images.idx3-ubyte.gz", dataset_name);
+    let path = Path::new(&path);
+    let images_data = &MnistData::new(&(File::open(path))?)?;
+
     let mut images: Vec<DMatrix<f64>> = Vec::new();
     let image_shape = (images_data.sizes[1] * images_data.sizes[2]) as usize;
 
@@ -60,17 +64,14 @@ pub fn load_data(dataset_name: &str) -> Result<Vec<MnistImage>, std::io::Error> 
         images.push(DMatrix::from_vec(image_shape, 1, image_data));
     }
 
-    let classifications: Vec<u8> = label_data.data.clone();
-    let mut ret: Vec<MnistImage> = Vec::new();
+    let classes: Vec<DMatrix<f64>> = label_data
+        .data
+        .clone()
+        .into_iter()
+        .map(|x| one_hot_encode(x))
+        .collect::<Vec<DMatrix<f64>>>();
 
-    for (image, class) in images.into_iter().zip(classifications.into_iter()) {
-        ret.push(MnistImage {
-            image,
-            class: one_hot_encode(class),
-        })
-    }
-
-    Ok(ret)
+    Ok(MnistDataset { images, classes })
 }
 
 fn one_hot_encode(class: u8) -> DMatrix<f64> {

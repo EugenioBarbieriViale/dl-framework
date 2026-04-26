@@ -1,11 +1,10 @@
-mod net;
+use crate::net::Net;
+use net::functions::{ActivationFunction, LossFunction};
 
 use nalgebra::DMatrix;
+use std::path::Path;
 
-use crate::net::Net;
-use net::functions::LossFunction;
-use net::functions::ActivationFunction;
-
+mod net;
 
 pub struct Hyperparams {
     epochs: usize,
@@ -15,55 +14,41 @@ pub struct Hyperparams {
 impl Hyperparams {
     pub fn new() -> Self {
         Hyperparams {
-            epochs: 10000,
-            learning_rate: 1e-2,
+            epochs: 100,
+            learning_rate: 1e-3,
         }
     }
 }
 
-
 fn main() {
-    let data = DMatrix::from_row_slice(2, 4, &[
-        0.0, 1.0, 0.0, 1.0,
-        0.0, 0.0, 1.0, 1.0,
-    ]);
+    let data = DMatrix::from_row_slice(8, 1, &[0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0]);
+    let label = DMatrix::from_row_slice(4, 1, &[0.0, 1.0, 1.0, 0.0]);
 
-    let label = DMatrix::from_row_slice(1, 4, &[
-        0.0, 1.0, 1.0, 0.0,
-    ]);
+    let arch = vec![8, 6, 4];
 
-    let arch = vec![2, 4, 1];
-
-    let params = Hyperparams::new();
+    let hypp = Hyperparams::new();
     let loss_func = LossFunction::SquaredError;
     let act_funcs = vec![ActivationFunction::ReLU; 3];
-    // let act_funcs = vec![ActivationFunction::Sigmoid; 3];
 
     let mut net = Net::new(arch, act_funcs, loss_func);
 
-    for e in 0..params.epochs {
-        for i in 0..4 {
-            let x = get_col(i, &data);
-            let y = get_col(i, &label);
+    net.train(&data, &label, &hypp);
 
-            net.train(&x, &y, &params);
-        }
+    let path = Path::new("/home/eu/programming/dl-framework/models/xor.json");
 
-        if e % 100 == 0 {
-            println!("Epoch: {} cost: {}", e, net.cost);
-        }
-    }
+    println!("Saving model...");
+    net.save_to(path).unwrap();
+    println!("Done");
 
-    for i in 0..4 {
-        let x = get_col(i, &data);
-        let y = get_col(i, &label);
+    println!("Loading model...");
+    let p = net.load_from(path).unwrap();
+    println!("Done");
 
-        let out = net.predict(&x);
+    net.params = p;
 
-        println!("{}, {} -> {}: {}", x[(0, 0)], x[(1, 0)], y[(0, 0)], out[(0, 0)]);
-    }
-}
-
-fn get_col(i: usize, m: &DMatrix<f64>) -> DMatrix<f64> {
-    DMatrix::from_vec(m.nrows(), 1, m.column(i).iter().cloned().collect())
+    let out = net.predict(&data);
+    println!("{:?}", data);
+    println!("{:?}", label);
+    println!("------------");
+    println!("{:?}", out);
 }

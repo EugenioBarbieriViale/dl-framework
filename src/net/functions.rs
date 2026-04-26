@@ -1,5 +1,4 @@
 use nalgebra::DMatrix;
-use serde::{Deserialize, Serialize};
 use std::f64::consts::E;
 
 fn sigmoid(x: f64) -> f64 {
@@ -12,7 +11,8 @@ fn softmax(x: &DMatrix<f64>) -> DMatrix<f64> {
     e.map(|xi| xi / s)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+#[allow(unused)]
 pub enum ActivationFunction {
     Sigmoid,
     ReLU,
@@ -42,6 +42,8 @@ impl ActivationFunction {
     }
 }
 
+#[derive(Debug)]
+#[allow(unused)]
 pub enum LossFunction {
     SquaredError,
     CrossEntropy,
