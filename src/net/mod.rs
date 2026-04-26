@@ -26,8 +26,8 @@ impl NetParams {
             let cols = arch[i];
             let rows = arch[i + 1];
 
-            let weight_matrix = DMatrix::<f64>::new_random(rows, cols);
-            let bias_matrix = DMatrix::<f64>::new_random(rows, 1);
+            let weight_matrix = DMatrix::<f64>::new_random(rows, cols) / 10000.0;
+            let bias_matrix = DMatrix::<f64>::new_random(rows, 1) / 10000.0;
 
             weights.push(weight_matrix);
             biases.push(bias_matrix);
@@ -57,15 +57,15 @@ impl Net {
         act_functions: Vec<ActivationFunction>,
         loss_function: LossFunction,
     ) -> Self {
-        if arch.len() != act_functions.len() {
+        let layers = arch.len() - 1;
+
+        if layers != act_functions.len() {
             panic!(
                 "Network and activation functions sizes mismatch ({}, {})",
-                arch.len(),
+                layers,
                 act_functions.len()
             );
         }
-
-        let layers = arch.len() - 1;
 
         let params = NetParams::new(&arch, layers);
 
@@ -129,11 +129,31 @@ impl Net {
     ) {
         // let batch_size = y.ncols() as f64; // slow
 
+        // let out = &self.activations[self.layers];
+        // let loss_grad = self.loss_function.gradient(out, y);
+        // let activation_deriv =
+        //     self.act_functions[self.layers - 1].derivative(&self.zs[self.layers - 1]);
+        // let mut delta = loss_grad.component_mul(&activation_deriv);
+        //
+        // nabla_w[self.layers - 1] = &delta * self.activations[self.layers - 1].transpose();
+        // nabla_b[self.layers - 1] = delta.clone();
+
         let out = &self.activations[self.layers];
         let loss_grad = self.loss_function.gradient(out, y);
-        let activation_deriv =
-            self.act_functions[self.layers - 1].derivative(&self.zs[self.layers - 1]);
-        let mut delta = loss_grad.component_mul(&activation_deriv);
+
+        let mut delta = if matches!(
+            self.act_functions[self.layers - 1],
+            ActivationFunction::Softmax
+        ) {
+            // compute softmax
+            let s = out;
+            let dot: f64 = s.component_mul(&loss_grad).sum();
+            s.component_mul(&(&loss_grad - DMatrix::from_element(s.nrows(), 1, dot)))
+        } else {
+            let activation_deriv =
+                self.act_functions[self.layers - 1].derivative(&self.zs[self.layers - 1]);
+            loss_grad.component_mul(&activation_deriv)
+        };
 
         nabla_w[self.layers - 1] = &delta * self.activations[self.layers - 1].transpose();
         nabla_b[self.layers - 1] = delta.clone();

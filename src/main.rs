@@ -35,13 +35,13 @@ fn main() {
 
     let params = Hyperparams::new();
     let loss_func = LossFunction::CrossEntropy;
-    let mut act_funcs = vec![ActivationFunction::ReLU; 3];
+    let mut act_funcs = vec![ActivationFunction::ReLU; 2];
     act_funcs.push(ActivationFunction::Softmax);
 
     let mut net = Net::new(arch, act_funcs, loss_func);
     println!("Neural network has been initialized\n");
 
-    run_training(&mut net, &data, &params, model_path);
+    // run_training(&mut net, &data, &params, model_path);
     from_model(&mut net, &data, model_path);
 }
 
@@ -67,7 +67,6 @@ fn from_model(net: &mut Net, data: &MnistDataset, path: &Path) {
 
     let idx = 100;
     let out = net.predict(&data.images[idx]);
-    println!("{:?}", data.images[idx]);
     println!("{:?}", data.classes[idx]);
     println!("------------");
     println!("{:?}", out);

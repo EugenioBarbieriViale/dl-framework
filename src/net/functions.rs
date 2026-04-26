@@ -5,11 +5,22 @@ fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
 }
 
+// fn softmax(x: &DMatrix<f64>) -> DMatrix<f64> {
+//     let e = x.map(|xi| xi.exp());
+//     let s = e.sum();
+//     e.map(|xi| xi / s)
+// }
 fn softmax(x: &DMatrix<f64>) -> DMatrix<f64> {
-    let e = x.map(|xi| xi.exp());
+    let max = x.max();
+    let e = x.map(|xi| (xi - max).exp());
     let s = e.sum();
     e.map(|xi| xi / s)
 }
+// fn softmax(s: &DMatrix<f64>, grad: &DMatrix<f64>) -> DMatrix<f64> {
+//     // s and grad are (n, 1) column vectors
+//     let dot: f64 = s.component_mul(grad).sum();
+//     s.component_mul(&(grad - DMatrix::from_element(s.nrows(), 1, dot)))
+// }
 
 #[derive(Clone, Debug)]
 #[allow(unused)]
