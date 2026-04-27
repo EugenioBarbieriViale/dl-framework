@@ -1,3 +1,4 @@
+use super::functions::ActivationFunction;
 use super::{Net, NetParams};
 
 use nalgebra::DMatrix;

@@ -79,3 +79,8 @@ fn one_hot_encode(class: u8) -> DMatrix<f64> {
     enc[(class as usize, 0)] = 1.0;
     enc
 }
+
+pub fn one_hot_decode(x: &DMatrix<f64>) -> usize {
+    let max = x.into_iter().fold(f64::NEG_INFINITY, |x, y| x.max(*y));
+    x.iter().position(|&x| x == max).unwrap()
+}

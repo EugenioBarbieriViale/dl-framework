@@ -1,15 +1,15 @@
 use smartmetal::net::Net;
 use smartmetal::net::functions::{ActivationFunction, LossFunction};
 use smartmetal::net::hyperparams::Hyperparams;
-use smartmetal::net::load_mnist::{MnistDataset, load_data};
+use smartmetal::net::load_mnist::{MnistDataset, load_data, one_hot_decode};
 
 use std::path::Path;
 
 fn main() {
-    let model_path = Path::new("/home/eu/programming/dl-framework/models/mnist.json");
+    let model_path = Path::new("/home/eu/programming/smart-metal/models/mnist.json");
 
     let data =
-        load_data("/home/eu/programming/dl-framework/data/train").expect("Could not load dataset.");
+        load_data("/home/eu/programming/smart-metal/data/train").expect("Could not load dataset.");
     println!(
         "MNIST dataset has been loaded ({} images found).",
         data.images.len()
@@ -49,9 +49,8 @@ fn from_model(net: &mut Net, data: &MnistDataset, path: &Path) {
 
     net.params = p;
 
-    let idx = 100;
+    let idx = 4440;
     let out = net.predict(&data.images[idx]);
-    println!("{:?}", data.classes[idx]);
-    println!("------------");
-    println!("{:?}", out);
+    println!("Prediction: {}", one_hot_decode(&out));
+    println!("Actual value: {}", one_hot_decode(&data.classes[idx]));
 }
