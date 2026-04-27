@@ -1,6 +1,6 @@
-use super::Hyperparams;
 use functions::ActivationFunction;
 use functions::LossFunction;
+use hyperparams::Hyperparams;
 
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,8 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 
 pub mod functions;
+pub mod hyperparams;
+pub mod load_mnist;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NetParams {
@@ -192,7 +194,7 @@ impl Net {
                 self.cost = self.loss_function.compute(&out, &y);
                 self.backward(&y, &mut nabla_w, &mut nabla_b, params.learning_rate);
                 c += 1.0;
-                println!("{:.2}%: {}", c / (len as f32), self.cost);
+                println!("{:.2}%: {}", c / (len as f32) * 100.0, self.cost);
             }
             println!("\n----------------------------------");
             println!("Epoch {} done with final cost: {}\n", e + 1, self.cost);

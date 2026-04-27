@@ -1,34 +1,26 @@
-use crate::net::Net;
-use net::functions::{ActivationFunction, LossFunction};
+use smartmetal::net::Net;
+use smartmetal::net::functions::{ActivationFunction, LossFunction};
+use smartmetal::net::hyperparams::Hyperparams;
 
 use nalgebra::DMatrix;
 use std::path::Path;
 
-mod net;
-
-pub struct Hyperparams {
-    epochs: usize,
-    learning_rate: f64,
-}
-
-impl Hyperparams {
-    pub fn new() -> Self {
-        Hyperparams {
-            epochs: 100,
-            learning_rate: 1e-3,
-        }
-    }
-}
-
 fn main() {
-    let data = DMatrix::from_row_slice(8, 1, &[0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0]);
-    let label = DMatrix::from_row_slice(4, 1, &[0.0, 1.0, 1.0, 0.0]);
+    let data: Vec<DMatrix<f64>> = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]
+        .chunks(2)
+        .map(|s| DMatrix::from_row_slice(2, 1, s))
+        .collect();
 
-    let arch = vec![8, 6, 4];
+    let label: Vec<DMatrix<f64>> = [0.0, 1.0, 1.0, 0.0]
+        .chunks(1)
+        .map(|s| DMatrix::from_row_slice(1, 1, s))
+        .collect();
 
-    let hypp = Hyperparams::new();
+    let arch = vec![2, 2, 1];
+
+    let hypp = Hyperparams::new(100, 5e-2);
     let loss_func = LossFunction::SquaredError;
-    let act_funcs = vec![ActivationFunction::ReLU; 3];
+    let act_funcs = vec![ActivationFunction::ReLU; 2];
 
     let mut net = Net::new(arch, act_funcs, loss_func);
 
@@ -46,9 +38,14 @@ fn main() {
 
     net.params = p;
 
-    let out = net.predict(&data);
-    println!("{:?}", data);
-    println!("{:?}", label);
-    println!("------------");
-    println!("{:?}", out);
+    for (x, y) in data.into_iter().zip(label.into_iter()) {
+        let out = net.predict(&x);
+        println!(
+            "{} {}: {} => {}",
+            x[(0, 0)],
+            x[(1, 0)],
+            y[(0, 0)],
+            out[(0, 0)]
+        );
+    }
 }

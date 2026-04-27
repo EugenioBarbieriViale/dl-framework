@@ -1,25 +1,9 @@
-use crate::net::Net;
-use load_mnist::{MnistDataset, load_data};
-use net::functions::{ActivationFunction, LossFunction};
+use smartmetal::net::Net;
+use smartmetal::net::functions::{ActivationFunction, LossFunction};
+use smartmetal::net::hyperparams::Hyperparams;
+use smartmetal::net::load_mnist::{MnistDataset, load_data};
 
 use std::path::Path;
-
-mod load_mnist;
-mod net;
-
-pub struct Hyperparams {
-    epochs: usize,
-    learning_rate: f64,
-}
-
-impl Hyperparams {
-    pub fn new() -> Self {
-        Hyperparams {
-            epochs: 2,
-            learning_rate: 1e-2,
-        }
-    }
-}
 
 fn main() {
     let model_path = Path::new("/home/eu/programming/dl-framework/models/mnist.json");
@@ -33,7 +17,7 @@ fn main() {
 
     let arch = vec![28 * 28, 512, 512, 10];
 
-    let params = Hyperparams::new();
+    let params = Hyperparams::new(5, 1e-2);
     let loss_func = LossFunction::CrossEntropy;
     let mut act_funcs = vec![ActivationFunction::ReLU; 2];
     act_funcs.push(ActivationFunction::Softmax);

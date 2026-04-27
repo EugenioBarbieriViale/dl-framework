@@ -230,20 +230,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
-name = "dl-framework"
-version = "0.1.0"
-dependencies = [
- "byteorder",
- "criterion",
- "flate2",
- "matrixmultiply",
- "nalgebra",
- "rand",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -850,6 +836,20 @@ name = "simd-adler32"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
+
+[[package]]
+name = "smartmetal"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "criterion",
+ "flate2",
+ "matrixmultiply",
+ "nalgebra",
+ "rand",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "syn"
