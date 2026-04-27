@@ -1,11 +1,10 @@
 # Compelling
 ## Implement softmax decently
 ## Benchmarks
-## Organize in lib/
+## Use Rayon for multi threadding across batches
 
 # Secondary
 ## Load MNIST dataset from CSV file instead of whatever that is
-## Move code out of mod.rs and use it only to mod other functions
 
 # Maybe useless
 ## Use static matrices instead of dynamically allocated ones
@@ -13,3 +12,7 @@
 
 # Features
 ## Predict sees if softmax is used and one-hot-decodes the output of the net
+
+# Done
+## Organize in lib/
+## Move code out of mod.rs and use it only to mod other functions
