@@ -16,5 +16,5 @@ matrixmultiply = { version = "0.3.10", features = ["threading"] }
 criterion = "0.8.2"
 
 [[bench]]
-name = "my_benchmark"
+name = "bench_training"
 harness = false

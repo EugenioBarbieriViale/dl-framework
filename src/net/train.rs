@@ -81,6 +81,7 @@ impl Net {
         assert_eq!(len, classes.len());
         let (mut nabla_w, mut nabla_b) = self.init_gradients();
 
+        println!("Training has started...");
         for e in 0..params.epochs {
             // let mut c = 0.0;
             for (x, y) in data.into_iter().zip(classes.into_iter()) {
@@ -93,5 +94,6 @@ impl Net {
             // println!("\n----------------------------------");
             // println!("Epoch {} done with final cost: {}\n", e + 1, self.cost);
         }
+        println!("Training ended.");
     }
 }
