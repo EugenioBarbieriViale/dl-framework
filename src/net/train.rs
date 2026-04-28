@@ -3,6 +3,8 @@ use super::functions::*;
 use super::hyperparams::Hyperparams;
 
 use nalgebra::DMatrix;
+use rayon::prelude::*;
+// use std::thread;
 
 impl Net {
     pub fn forward(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
@@ -81,7 +83,7 @@ impl Net {
         assert_eq!(len, classes.len());
         let (mut nabla_w, mut nabla_b) = self.init_gradients();
 
-        println!("Training has started...");
+        // println!("Training has started...");
         for e in 0..params.epochs {
             // let mut c = 0.0;
             for (x, y) in data.into_iter().zip(classes.into_iter()) {
@@ -94,6 +96,31 @@ impl Net {
             // println!("\n----------------------------------");
             // println!("Epoch {} done with final cost: {}\n", e + 1, self.cost);
         }
-        println!("Training ended.");
+        // println!("Training ended.");
+    }
+
+    pub fn par_train(
+        &mut self,
+        data: &Vec<DMatrix<f64>>,
+        classes: &Vec<DMatrix<f64>>,
+        params: &Hyperparams,
+    ) {
+        let len = data.len();
+        assert_eq!(len, classes.len());
+        let (mut nabla_w, mut nabla_b) = self.init_gradients();
+
+        // println!("Training has started...");
+        for e in 0..params.epochs {
+            for (x, y) in data
+                .par_iter()
+                .zip(classes.par_iter())
+                .collect::<Vec<(&DMatrix<f64>, &DMatrix<f64>)>>()
+            {
+                let out = self.forward(&x);
+                self.cost = self.loss_function.compute(&out, &y);
+                self.backward(&y, &mut nabla_w, &mut nabla_b, params.learning_rate);
+            }
+        }
+        // println!("Training ended.");
     }
 }

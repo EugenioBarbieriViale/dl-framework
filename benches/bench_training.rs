@@ -1,3 +1,4 @@
+use criterion::BenchmarkId;
 use smartmetal::net::Net;
 use smartmetal::net::functions::*;
 use smartmetal::net::hyperparams::Hyperparams;
@@ -17,17 +18,24 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         .map(|s| DMatrix::from_row_slice(1, 1, s))
         .collect();
 
-    let arch = vec![2, 2, 1];
+    let arch = vec![2, 512, 1024, 1];
 
-    let hypp = Hyperparams::new(100, 5e-2);
     let loss_func = LossFunction::SquaredError;
-    let act_funcs = vec![ActivationFunction::ReLU; 2];
+    let act_funcs = vec![ActivationFunction::ReLU; 3];
 
     let mut net = Net::new(arch, act_funcs, loss_func);
 
-    c.bench_function("xor training", |b| {
-        b.iter(|| net.train(black_box(&data), black_box(&labels), black_box(&hypp)))
-    });
+    let mut group = c.benchmark_group("xor_comparsion");
+    for epochs in [100, 200, 500].iter() {
+        let hypp = Hyperparams::new(*epochs, 5e-2);
+        group.bench_with_input(BenchmarkId::new("Sequential", epochs), epochs, |b, _| {
+            b.iter(|| net.train(black_box(&data), black_box(&labels), black_box(&hypp)))
+        });
+        group.bench_with_input(BenchmarkId::new("Parallel", epochs), epochs, |b, _| {
+            b.iter(|| net.par_train(black_box(&data), black_box(&labels), black_box(&hypp)))
+        });
+    }
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

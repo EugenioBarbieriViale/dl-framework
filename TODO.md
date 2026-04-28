@@ -1,11 +1,11 @@
 # Compelling
+## Change parameters inizialization, as it affects net performance and benchmarks
 ## Implement softmax decently
 ## Introduce batches
 ## Use Rayon for multi threadding across batches
 - [https://doc.rust-lang.org/book/ch13-01-closures.html#closures]
 - [https://doc.rust-lang.org/book/ch13-01-closures.html#capturing-references-or-moving-ownership]
 - [https://doc.rust-lang.org/book/ch16-00-concurrency.html]
-## Implement softmax decently
 
 # Secondary
 ## Improve load_data
