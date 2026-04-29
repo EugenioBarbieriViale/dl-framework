@@ -1,7 +1,10 @@
 use functions::*;
+use hyperparams::*;
 
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
+
+use crate::net::hyperparams::Initialization;
 
 pub mod checkpoint;
 pub mod functions;
@@ -21,11 +24,11 @@ impl NetParams {
         let mut biases = Vec::new();
 
         for i in 0..layers {
-            let cols = arch[i];
-            let rows = arch[i + 1];
+            let c = arch[i];
+            let r = arch[i + 1];
 
-            let weight_matrix = DMatrix::<f64>::new_random(rows, cols) / 10000.0;
-            let bias_matrix = DMatrix::<f64>::new_random(rows, 1) / 10000.0;
+            let weight_matrix = new(Initialization::Kaiming(Fan::In), (r, c));
+            let bias_matrix = new(Initialization::Kaiming(Fan::In), (r, 1));
 
             weights.push(weight_matrix);
             biases.push(bias_matrix);

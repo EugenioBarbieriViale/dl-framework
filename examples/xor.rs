@@ -18,28 +18,26 @@ fn main() {
 
     let arch = vec![2, 2, 1];
 
-    let hypp = Hyperparams::new(100, 5e-2);
+    let hypp = Hyperparams::new(1000, 1, 1e-2);
     let loss_func = LossFunction::SquaredError;
     let act_funcs = vec![ActivationFunction::ReLU; 2];
 
     let mut net = Net::new(arch, act_funcs, loss_func);
 
-    net.train(&data, &label, &hypp);
+    net.seq_train(&data, &label, &hypp);
 
-    let path = Path::new("/home/eu/programming/dl-framework/models/xor.json");
-
-    println!("Saving model...");
-    net.save_to(path).unwrap();
-    println!("Done");
-
-    println!("Loading model...");
-    let p = net.load_from(path).unwrap();
-    println!("Done");
-
-    net.params = p;
+    // let path = Path::new("/home/eu/programming/dl-framework/models/xor.json");
+    //
+    // println!("Saving model...");
+    // net.save_to(path).unwrap();
+    // println!("Done");
+    //
+    // println!("Loading model...");
+    // net.load_from(path).unwrap();
+    // println!("Done");
 
     for (x, y) in data.into_iter().zip(label.into_iter()) {
-        let out = net.predict(&x);
+        let out = net.predict_raw(&x);
         println!(
             "{} {}: {} => {}",
             x[(0, 0)],
