@@ -1,13 +1,11 @@
 # Compelling
-## Change parameters inizialization, as it affects net performance and benchmarks
 ## Implement softmax decently
-## Introduce batches
+## Option batches, if None don't use them
 ## Use Rayon for multi threadding across batches
-- [https://doc.rust-lang.org/book/ch13-01-closures.html#closures]
-- [https://doc.rust-lang.org/book/ch13-01-closures.html#capturing-references-or-moving-ownership]
 - [https://doc.rust-lang.org/book/ch16-00-concurrency.html]
 
 # Secondary
+## Warn or stop if model.json already exists
 ## Improve load_data
 
 # Maybe useless
@@ -23,3 +21,5 @@
 ## Benchmarks
 ## Predict sees if softmax is used and one-hot-decodes the output of the net
 ## Remove run_training and from_model
+## Introduce batches
+## Change parameters inizialization, as it affects net performance and benchmarks

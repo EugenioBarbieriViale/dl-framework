@@ -75,7 +75,6 @@ impl Net {
         let len = data.len();
         assert_eq!(len, classes.len());
 
-        // println!("Training has started...");
         for e in 0..hypp.epochs {
             self.cost = 0.0;
             data.chunks(hypp.batch_size)
@@ -90,12 +89,15 @@ impl Net {
 
                         self.backward(yi, &mut nabla_w, &mut nabla_b);
                     }
-                    self.update_params(&nabla_w, &nabla_b, hypp.learning_rate);
+                    self.update_params(
+                        &nabla_w,
+                        &nabla_b,
+                        hypp.learning_rate / hypp.batch_size as f64,
+                    );
                 });
             self.cost /= len as f64;
             println!("Epoch {e}: loss = {}", self.cost);
         }
-        // println!("Training ended.");
     }
 
     pub fn par_train(
@@ -107,20 +109,29 @@ impl Net {
         let len = data.len();
         assert_eq!(len, classes.len());
 
-        // println!("Training has started...");
         for e in 0..hypp.epochs {
-            data.chunks(hypp.batch_size)
-                .zip(classes.chunks(hypp.batch_size))
+            self.cost = 0.0;
+            data.par_iter()
+                .chunks(hypp.batch_size)
+                .zip(classes.par_iter().chunks(hypp.batch_size))
                 .for_each(|(x_batch, y_batch)| {
                     let (mut nabla_w, mut nabla_b) = self.init_gradients();
                     for (xi, yi) in x_batch.iter().zip(y_batch.iter()) {
-                        let out = self.forward(&xi);
-                        self.cost = self.loss_function.compute(&out, &yi);
-                        // self.backward(&yi, &mut nabla_w, &mut nabla_b);
+                        let _ = &self.forward(xi);
+
+                        let out = &self.activations[self.layers];
+                        self.cost += self.loss_function.compute(out, yi);
+
+                        self.backward(yi, &mut nabla_w, &mut nabla_b);
                     }
-                    self.update_params(&mut nabla_w, &mut nabla_b, hypp.learning_rate);
+                    self.update_params(
+                        &nabla_w,
+                        &nabla_b,
+                        hypp.learning_rate / hypp.batch_size as f64,
+                    );
                 });
+            self.cost /= len as f64;
+            println!("Epoch {e}: loss = {}", self.cost);
         }
-        // println!("Training ended.");
     }
 }

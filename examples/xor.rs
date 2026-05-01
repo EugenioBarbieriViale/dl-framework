@@ -18,7 +18,7 @@ fn main() {
 
     let arch = vec![2, 2, 1];
 
-    let hypp = Hyperparams::new(1000, 1, 1e-2);
+    let hypp = Hyperparams::new(10000, 1, 1e-2);
     let loss_func = LossFunction::SquaredError;
     let act_funcs = vec![ActivationFunction::ReLU; 2];
 

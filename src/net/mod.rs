@@ -29,6 +29,8 @@ impl NetParams {
 
             let weight_matrix = new(Initialization::Kaiming(Fan::In), (r, c));
             let bias_matrix = new(Initialization::Kaiming(Fan::In), (r, 1));
+            // let weight_matrix = new(Initialization::Random, (r, c));
+            // let bias_matrix = new(Initialization::Random, (r, 1));
 
             weights.push(weight_matrix);
             biases.push(bias_matrix);
