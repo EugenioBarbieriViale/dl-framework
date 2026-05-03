@@ -27,14 +27,14 @@ pub enum Initialization {
     Kaiming(Fan),
 }
 
-pub fn new(i: Initialization, dims: (usize, usize)) -> DMatrix<f64> {
+pub fn new(i: &Initialization, dims: (usize, usize)) -> DMatrix<f64> {
     match i {
         Initialization::Random => DMatrix::<f64>::new_random(dims.0, dims.1),
         Initialization::Kaiming(fan) => kaiming(dims, fan),
     }
 }
 
-fn kaiming(dims: (usize, usize), fan: Fan) -> DMatrix<f64> {
+fn kaiming(dims: (usize, usize), fan: &Fan) -> DMatrix<f64> {
     let n = match fan {
         Fan::In => dims.0,
         Fan::Out => dims.1,

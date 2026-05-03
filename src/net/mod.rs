@@ -19,7 +19,7 @@ pub struct NetParams {
 }
 
 impl NetParams {
-    pub fn new(arch: &Vec<usize>, layers: usize) -> Self {
+    pub fn new(arch: &Vec<usize>, layers: usize, init: &Initialization) -> Self {
         let mut weights = Vec::new();
         let mut biases = Vec::new();
 
@@ -27,10 +27,8 @@ impl NetParams {
             let c = arch[i];
             let r = arch[i + 1];
 
-            let weight_matrix = new(Initialization::Kaiming(Fan::In), (r, c));
-            let bias_matrix = new(Initialization::Kaiming(Fan::In), (r, 1));
-            // let weight_matrix = new(Initialization::Random, (r, c));
-            // let bias_matrix = new(Initialization::Random, (r, 1));
+            let weight_matrix = new(init, (r, c));
+            let bias_matrix = new(init, (r, 1));
 
             weights.push(weight_matrix);
             biases.push(bias_matrix);
@@ -59,6 +57,7 @@ impl Net {
         arch: Vec<usize>,
         act_functions: Vec<ActivationFunction>,
         loss_function: LossFunction,
+        init: &Initialization,
     ) -> Self {
         let layers = arch.len() - 1;
 
@@ -70,7 +69,7 @@ impl Net {
             );
         }
 
-        let params = NetParams::new(&arch, layers);
+        let params = NetParams::new(&arch, layers, init);
 
         let mut zs = Vec::with_capacity(layers);
         let mut activations = Vec::with_capacity(layers + 1);

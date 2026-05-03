@@ -1,6 +1,6 @@
 use smartmetal::net::Net;
 use smartmetal::net::functions::{ActivationFunction, LossFunction};
-use smartmetal::net::hyperparams::Hyperparams;
+use smartmetal::net::hyperparams::{Fan, Hyperparams, Initialization};
 use smartmetal::net::load_mnist::{load_data, one_hot_decode};
 
 use std::path::Path;
@@ -21,8 +21,9 @@ fn main() {
     let loss_func = LossFunction::CrossEntropy;
     let mut act_funcs = vec![ActivationFunction::ReLU; 2];
     act_funcs.push(ActivationFunction::Softmax);
+    let init = Initialization::Kaiming(Fan::In);
 
-    let mut net = Net::new(arch, act_funcs, loss_func);
+    let mut net = Net::new(arch, act_funcs, loss_func, &init);
     println!("Neural network has been initialized\n");
 
     // net.seq_train(&data.images, &data.classes, &params);

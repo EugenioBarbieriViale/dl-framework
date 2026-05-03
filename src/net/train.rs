@@ -77,30 +77,24 @@ impl Net {
 
         for e in 0..hypp.epochs {
             self.cost = 0.0;
-            data.chunks(hypp.batch_size)
-                .zip(classes.chunks(hypp.batch_size))
-                .for_each(|(x_batch, y_batch)| {
-                    let (mut nabla_w, mut nabla_b) = self.init_gradients();
-                    for (xi, yi) in x_batch.iter().zip(y_batch.iter()) {
-                        let _ = &self.forward(xi);
+            data.into_iter().zip(classes).for_each(|(x, y)| {
+                let (mut nabla_w, mut nabla_b) = self.init_gradients();
 
-                        let out = &self.activations[self.layers];
-                        self.cost += self.loss_function.compute(out, yi);
+                let _ = &self.forward(x);
 
-                        self.backward(yi, &mut nabla_w, &mut nabla_b);
-                    }
-                    self.update_params(
-                        &nabla_w,
-                        &nabla_b,
-                        hypp.learning_rate / hypp.batch_size as f64,
-                    );
-                });
+                let out = &self.activations[self.layers];
+                self.cost += self.loss_function.compute(out, y);
+
+                self.backward(y, &mut nabla_w, &mut nabla_b);
+
+                self.update_params(&nabla_w, &nabla_b, hypp.learning_rate);
+            });
             self.cost /= len as f64;
             println!("Epoch {e}: loss = {}", self.cost);
         }
     }
 
-    pub fn par_train(
+    pub fn batch_seq_train(
         &mut self,
         data: &Vec<DMatrix<f64>>,
         classes: &Vec<DMatrix<f64>>,
@@ -111,9 +105,8 @@ impl Net {
 
         for e in 0..hypp.epochs {
             self.cost = 0.0;
-            data.par_iter()
-                .chunks(hypp.batch_size)
-                .zip(classes.par_iter().chunks(hypp.batch_size))
+            data.chunks(hypp.batch_size)
+                .zip(classes.chunks(hypp.batch_size))
                 .for_each(|(x_batch, y_batch)| {
                     let (mut nabla_w, mut nabla_b) = self.init_gradients();
                     for (xi, yi) in x_batch.iter().zip(y_batch.iter()) {
