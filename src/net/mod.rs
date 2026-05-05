@@ -48,8 +48,6 @@ pub struct Net {
     pub params: NetParams,
     zs: Vec<DMatrix<f64>>,
     activations: Vec<DMatrix<f64>>,
-
-    pub cost: f64,
 }
 
 impl Net {
@@ -89,7 +87,6 @@ impl Net {
             params,
             zs,
             activations,
-            cost: 0.0,
         }
     }
 

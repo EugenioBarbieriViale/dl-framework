@@ -66,6 +66,54 @@ impl Net {
         }
     }
 
+    fn batch_train(
+        &mut self,
+        cost: &mut f64,
+        x_batch: &[DMatrix<f64>],
+        y_batch: &[DMatrix<f64>],
+    ) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
+        let (mut nabla_w, mut nabla_b) = self.init_gradients();
+        for (xi, yi) in x_batch
+            .par_iter()
+            .zip(y_batch.par_iter())
+            .collect::<Vec<(_, _)>>()
+        {
+            let _ = &self.forward(xi);
+
+            let out = &self.activations[self.layers];
+            *cost += self.loss_function.compute(out, yi);
+
+            self.backward(yi, &mut nabla_w, &mut nabla_b);
+        }
+        (nabla_w, nabla_b)
+    }
+
+    pub fn par_train(
+        &mut self,
+        data: &Vec<DMatrix<f64>>,
+        classes: &Vec<DMatrix<f64>>,
+        hypp: &Hyperparams,
+    ) {
+        let len = data.len();
+        assert_eq!(len, classes.len());
+
+        for e in 0..hypp.epochs {
+            let mut cost = 0.0;
+            data.chunks(hypp.batch_size)
+                .zip(classes.chunks(hypp.batch_size))
+                .for_each(|(x_batch, y_batch)| {
+                    let (nabla_w, nabla_b) = self.batch_train(&mut cost, x_batch, y_batch);
+                    self.update_params(
+                        &nabla_w,
+                        &nabla_b,
+                        hypp.learning_rate / hypp.batch_size as f64,
+                    );
+                });
+            cost /= len as f64;
+            println!("Epoch {e}: loss = {}", cost);
+        }
+    }
+
     pub fn seq_train(
         &mut self,
         data: &Vec<DMatrix<f64>>,
@@ -76,21 +124,21 @@ impl Net {
         assert_eq!(len, classes.len());
 
         for e in 0..hypp.epochs {
-            self.cost = 0.0;
+            let mut cost = 0.0;
             data.into_iter().zip(classes).for_each(|(x, y)| {
                 let (mut nabla_w, mut nabla_b) = self.init_gradients();
 
                 let _ = &self.forward(x);
 
                 let out = &self.activations[self.layers];
-                self.cost += self.loss_function.compute(out, y);
+                cost += self.loss_function.compute(out, y);
 
                 self.backward(y, &mut nabla_w, &mut nabla_b);
 
                 self.update_params(&nabla_w, &nabla_b, hypp.learning_rate);
             });
-            self.cost /= len as f64;
-            println!("Epoch {e}: loss = {}", self.cost);
+            cost /= len as f64;
+            // println!("Epoch {e}: loss = {}", cost);
         }
     }
 
@@ -104,7 +152,7 @@ impl Net {
         assert_eq!(len, classes.len());
 
         for e in 0..hypp.epochs {
-            self.cost = 0.0;
+            let mut cost = 0.0;
             data.chunks(hypp.batch_size)
                 .zip(classes.chunks(hypp.batch_size))
                 .for_each(|(x_batch, y_batch)| {
@@ -113,7 +161,7 @@ impl Net {
                         let _ = &self.forward(xi);
 
                         let out = &self.activations[self.layers];
-                        self.cost += self.loss_function.compute(out, yi);
+                        cost += self.loss_function.compute(out, yi);
 
                         self.backward(yi, &mut nabla_w, &mut nabla_b);
                     }
@@ -123,8 +171,8 @@ impl Net {
                         hypp.learning_rate / hypp.batch_size as f64,
                     );
                 });
-            self.cost /= len as f64;
-            println!("Epoch {e}: loss = {}", self.cost);
+            cost /= len as f64;
+            // println!("Epoch {e}: loss = {}", cost);
         }
     }
 }
