@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nalgebra = { version = "0.34.2", features = ["rand", "serde-serialize"] }
+nalgebra = { version = "0.34.2", features = [
+  "matrixmultiply",
+  "rand",
+  "serde-serialize",
+] }
 rand = "0.10.1"
 rand_distr = "0.6.0"
 flate2 = "1.1.5"

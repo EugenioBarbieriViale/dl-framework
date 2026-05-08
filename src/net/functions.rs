@@ -53,7 +53,7 @@ impl ActivationFunction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum LossFunction {
     SquaredError,

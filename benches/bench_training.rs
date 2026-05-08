@@ -8,35 +8,49 @@ use nalgebra::DMatrix;
 use std::hint::black_box;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let data: Vec<DMatrix<f64>> = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]
-        .chunks(2)
-        .map(|s| DMatrix::from_row_slice(2, 1, s))
-        .collect();
+    let len = 2048;
+    let batch_size = 64;
+    let epochs = 10;
 
-    let labels: Vec<DMatrix<f64>> = [0.0, 1.0, 1.0, 0.0]
-        .chunks(1)
-        .map(|s| DMatrix::from_row_slice(1, 1, s))
-        .collect();
+    let arch = vec![2, 512, 512, 1];
 
-    let arch = vec![2, 256, 256, 1];
+    let input_size = arch[0];
+    let output_size = *arch.last().unwrap();
 
     let loss_func = LossFunction::SquaredError;
-    let act_funcs = vec![ActivationFunction::ReLU; 3];
+    let act_funcs = vec![ActivationFunction::ReLU; arch.len() - 1];
     let init = Initialization::Random;
+    let hypp = Hyperparams::new(epochs, batch_size, 5e-2);
 
-    let mut net = Net::new(arch, act_funcs, loss_func, &init);
+    let range: Vec<f64> = (0..len).map(|x| x as f64).collect();
 
-    let mut group = c.benchmark_group("xor_comparsion");
-    // for epochs in [100, 200, 500].iter() {
-    for epochs in [100].iter() {
-        let hypp = Hyperparams::new(*epochs, 1, 5e-2);
-        group.bench_with_input(BenchmarkId::new("Sequential", epochs), epochs, |b, _| {
-            b.iter(|| net.batch_seq_train(black_box(&data), black_box(&labels), black_box(&hypp)))
-        });
-        group.bench_with_input(BenchmarkId::new("Parallel", epochs), epochs, |b, _| {
-            b.iter(|| net.par_train(black_box(&data), black_box(&labels), black_box(&hypp)))
-        });
-    }
+    let data: Vec<DMatrix<f64>> = range
+        .chunks(input_size)
+        .map(|s| DMatrix::from_row_slice(input_size, 1, s))
+        .collect();
+
+    let labels: Vec<DMatrix<f64>> = range[..len / input_size]
+        .to_vec()
+        .chunks(output_size)
+        .map(|s| DMatrix::from_row_slice(output_size, 1, s))
+        .collect();
+
+    let mut group = c.benchmark_group("synthetic_comparsion");
+
+    group.bench_with_input(BenchmarkId::new("Sequential", epochs), &epochs, |b, _| {
+        b.iter(|| {
+            let mut net = Net::new(arch.clone(), act_funcs.clone(), loss_func.clone(), &init);
+            net.batch_seq_train(black_box(&data), black_box(&labels), black_box(&hypp))
+        })
+    });
+
+    group.bench_with_input(BenchmarkId::new("Parallel", epochs), &epochs, |b, _| {
+        b.iter(|| {
+            let mut net = Net::new(arch.clone(), act_funcs.clone(), loss_func.clone(), &init);
+            net.par_train(black_box(&data), black_box(&labels), black_box(&hypp))
+        })
+    });
+
     group.finish();
 }
 
