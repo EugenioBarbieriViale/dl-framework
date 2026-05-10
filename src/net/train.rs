@@ -141,7 +141,45 @@ impl Net {
                     );
                 });
             cost /= len as f64;
-            println!("Epoch {e}: loss = {}", cost);
+            // println!("Epoch {e}: loss = {}", cost);
+        }
+    }
+
+    pub fn batch_seq_train(
+        &mut self,
+        data: &Vec<DMatrix<f64>>,
+        classes: &Vec<DMatrix<f64>>,
+        hypp: &Hyperparams,
+    ) {
+        let len = data.len();
+        assert_eq!(len, classes.len());
+
+        for e in 0..hypp.epochs {
+            let mut cost = 0.0;
+            data.chunks(hypp.batch_size)
+                .zip(classes.chunks(hypp.batch_size))
+                .for_each(|(x_batch, y_batch)| {
+                    let (mut nabla_w, mut nabla_b) = self.init_gradients();
+                    for (xi, yi) in x_batch.iter().zip(y_batch.iter()) {
+                        let (activations, zs) = self.forward(xi);
+
+                        let out = &activations[self.layers];
+                        cost += self.loss_function.compute(out, yi);
+
+                        let (nw, nb) = self.backward(yi, &activations, &zs);
+                        for i in 0..nw.len() {
+                            nabla_w[i] += &nw[i];
+                            nabla_b[i] += &nb[i];
+                        }
+                    }
+                    self.update_params(
+                        &nabla_w,
+                        &nabla_b,
+                        hypp.learning_rate / hypp.batch_size as f64,
+                    );
+                });
+            cost /= len as f64;
+            // println!("Epoch {e}: loss = {}", cost);
         }
     }
 
@@ -168,40 +206,6 @@ impl Net {
 
                 self.update_params(&nabla_w, &nabla_b, hypp.learning_rate);
             });
-            cost /= len as f64;
-            // println!("Epoch {e}: loss = {}", cost);
-        }
-    }
-
-    pub fn batch_seq_train(
-        &mut self,
-        data: &Vec<DMatrix<f64>>,
-        classes: &Vec<DMatrix<f64>>,
-        hypp: &Hyperparams,
-    ) {
-        let len = data.len();
-        assert_eq!(len, classes.len());
-
-        for e in 0..hypp.epochs {
-            let mut cost = 0.0;
-            data.chunks(hypp.batch_size)
-                .zip(classes.chunks(hypp.batch_size))
-                .for_each(|(x_batch, y_batch)| {
-                    let (mut nabla_w, mut nabla_b) = self.init_gradients();
-                    for (xi, yi) in x_batch.iter().zip(y_batch.iter()) {
-                        let _ = &self.forward(xi);
-
-                        let out = &self.activations[self.layers];
-                        cost += self.loss_function.compute(out, yi);
-
-                        self.backward(yi, &mut nabla_w, &mut nabla_b);
-                    }
-                    self.update_params(
-                        &nabla_w,
-                        &nabla_b,
-                        hypp.learning_rate / hypp.batch_size as f64,
-                    );
-                });
             cost /= len as f64;
             // println!("Epoch {e}: loss = {}", cost);
         }

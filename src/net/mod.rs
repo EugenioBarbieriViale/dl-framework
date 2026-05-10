@@ -1,14 +1,14 @@
+use crate::net::init::*;
 use functions::*;
-use hyperparams::*;
+// use hyperparams::*;
 
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
 
-use crate::net::hyperparams::Initialization;
-
 pub mod checkpoint;
 pub mod functions;
 pub mod hyperparams;
+pub mod init;
 pub mod load_mnist;
 pub mod train;
 

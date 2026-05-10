@@ -3,8 +3,6 @@
 - Create allocate function for vector of matrices
 - Implement softmax decently
 - Option batches, if None don't use them
-- Use Rayon for multi threadding across batches
-- [https://doc.rust-lang.org/book/ch16-00-concurrency.html]
 
 # Secondary
 - Warn or stop if model.json already exists
@@ -25,3 +23,4 @@
 - Remove run_training and from_model
 - Introduce batches
 - Change parameters inizialization, as it affects net performance and benchmarks
+- Use Rayon for multi threadding across batches

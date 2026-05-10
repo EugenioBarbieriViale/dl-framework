@@ -1,6 +1,7 @@
 use smartmetal::net::Net;
 use smartmetal::net::functions::{ActivationFunction, LossFunction};
-use smartmetal::net::hyperparams::{Fan, Hyperparams, Initialization};
+use smartmetal::net::hyperparams::Hyperparams;
+use smartmetal::net::init::*;
 use smartmetal::net::load_mnist::{load_data, one_hot_decode};
 
 use std::path::Path;

@@ -1,6 +1,7 @@
 use smartmetal::net::Net;
 use smartmetal::net::functions::{ActivationFunction, LossFunction};
-use smartmetal::net::hyperparams::{Hyperparams, Initialization};
+use smartmetal::net::hyperparams::Hyperparams;
+use smartmetal::net::init::*;
 
 use nalgebra::DMatrix;
 use std::path::Path;
@@ -25,8 +26,8 @@ fn main() {
 
     let mut net = Net::new(arch, act_funcs, loss_func, &init);
 
-    // net.batch_seq_train(&data, &label, &hypp);
-    net.par_train(&data, &label, &hypp);
+    net.batch_seq_train(&data, &label, &hypp);
+    // net.par_train(&data, &label, &hypp);
 
     let path = Path::new("/home/eu/programming/smart-metal/models/xor.json");
 

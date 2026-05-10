@@ -2,6 +2,7 @@ use criterion::BenchmarkId;
 use smartmetal::net::Net;
 use smartmetal::net::functions::*;
 use smartmetal::net::hyperparams::*;
+use smartmetal::net::init::*;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use nalgebra::DMatrix;
@@ -12,7 +13,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let batch_size = 64;
     let epochs = 10;
 
-    let arch = vec![2, 512, 512, 1];
+    let arch = vec![2, 256, 256, 1];
 
     let input_size = arch[0];
     let output_size = *arch.last().unwrap();
