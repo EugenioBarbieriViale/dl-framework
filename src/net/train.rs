@@ -6,25 +6,44 @@ use nalgebra::DMatrix;
 use rayon::prelude::*;
 
 impl Net {
-    pub fn forward(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
-        self.activations[0] = x.clone(); // slow
+    pub fn forward(&self, x: &DMatrix<f64>) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
+        let mut activations = Vec::with_capacity(self.layers + 1);
+        let mut zs = Vec::with_capacity(self.layers);
 
         for i in 0..self.layers {
-            self.zs[i] = (&self.params.weights[i] * &self.activations[i]) + &self.params.biases[i];
-            self.activations[i + 1] = self.act_functions[i].compute(&self.zs[i]);
+            activations.push(DMatrix::zeros(
+                self.params.weights[i].nrows(),
+                self.params.weights[i].ncols(),
+            ));
+            zs.push(DMatrix::zeros(
+                self.params.biases[i].nrows(),
+                self.params.biases[i].ncols(),
+            ));
+        }
+        activations.push(DMatrix::zeros(
+            self.params.weights[1].nrows(),
+            self.params.weights[1].ncols(),
+        ));
+
+        activations[0] = x.clone();
+
+        for i in 0..self.layers {
+            zs[i] = (&self.params.weights[i] * &activations[i]) + &self.params.biases[i];
+            activations[i + 1] = self.act_functions[i].compute(&zs[i]);
         }
 
-        // self.activations.last().unwrap().clone() // slow
-        self.activations[self.layers].clone()
+        (activations, zs)
     }
 
     fn backward(
         &self,
         y: &DMatrix<f64>,
-        nabla_w: &mut Vec<DMatrix<f64>>,
-        nabla_b: &mut Vec<DMatrix<f64>>,
-    ) {
-        let out = &self.activations[self.layers];
+        activations: &Vec<DMatrix<f64>>,
+        zs: &Vec<DMatrix<f64>>,
+    ) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
+        let (mut nabla_w, mut nabla_b) = self.init_gradients();
+
+        let out = &activations[self.layers];
         let loss_grad = self.loss_function.gradient(out, y);
 
         let mut delta = if matches!(
@@ -37,21 +56,23 @@ impl Net {
             s.component_mul(&(&loss_grad - DMatrix::from_element(s.nrows(), 1, dot)))
         } else {
             let activation_deriv =
-                self.act_functions[self.layers - 1].derivative(&self.zs[self.layers - 1]);
+                self.act_functions[self.layers - 1].derivative(&zs[self.layers - 1]);
             loss_grad.component_mul(&activation_deriv)
         };
 
-        nabla_w[self.layers - 1] += &delta * self.activations[self.layers - 1].transpose();
-        nabla_b[self.layers - 1] += delta.clone();
+        nabla_w[self.layers - 1] = &delta * activations[self.layers - 1].transpose();
+        nabla_b[self.layers - 1] = delta.clone();
 
         for l in (0..self.layers - 1).rev() {
             delta = self.params.weights[l + 1].transpose() * &delta;
-            let activation_deriv = self.act_functions[l].derivative(&self.zs[l]);
+            let activation_deriv = self.act_functions[l].derivative(&zs[l]);
             delta = delta.component_mul(&activation_deriv);
 
-            nabla_w[l] += &delta * self.activations[l].transpose();
-            nabla_b[l] += delta.clone();
+            nabla_w[l] = &delta * activations[l].transpose();
+            nabla_b[l] = delta.clone();
         }
+
+        (nabla_w, nabla_b)
     }
 
     fn update_params(
@@ -67,24 +88,34 @@ impl Net {
     }
 
     fn batch_train(
-        &mut self,
+        &self,
         cost: &mut f64,
         x_batch: &[DMatrix<f64>],
         y_batch: &[DMatrix<f64>],
     ) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
-        let (mut nabla_w, mut nabla_b) = self.init_gradients();
-        for (xi, yi) in x_batch
+        let res: Vec<(f64, Vec<DMatrix<f64>>, Vec<DMatrix<f64>>)> = x_batch
             .par_iter()
-            .zip(y_batch.par_iter())
-            .collect::<Vec<(_, _)>>()
-        {
-            let _ = &self.forward(xi);
+            .zip_eq(y_batch.par_iter())
+            .map(|(xi, yi)| {
+                let (activations, zs) = self.forward(xi);
 
-            let out = &self.activations[self.layers];
-            *cost += self.loss_function.compute(out, yi);
+                let out = &activations[self.layers];
+                let cost = self.loss_function.compute(out, yi);
 
-            self.backward(yi, &mut nabla_w, &mut nabla_b);
+                let (nw, nb) = self.backward(yi, &activations, &zs);
+                (cost, nw, nb)
+            })
+            .collect();
+
+        let (mut nabla_w, mut nabla_b) = self.init_gradients();
+        for (sample_cost, nw, nb) in res {
+            *cost += sample_cost;
+            for i in 0..nw.len() {
+                nabla_w[i] += &nw[i];
+                nabla_b[i] += &nb[i];
+            }
         }
+
         (nabla_w, nabla_b)
     }
 
@@ -110,7 +141,7 @@ impl Net {
                     );
                 });
             cost /= len as f64;
-            // println!("Epoch {e}: loss = {}", cost);
+            println!("Epoch {e}: loss = {}", cost);
         }
     }
 

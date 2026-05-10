@@ -73,8 +73,7 @@ impl Net {
         let mut activations = Vec::with_capacity(layers + 1);
 
         for i in 0..=layers {
-            let size = arch[i];
-            activations.push(DMatrix::<f64>::zeros(size, 1));
+            activations.push(DMatrix::<f64>::zeros(arch[i], 1));
             if i < layers {
                 zs.push(DMatrix::<f64>::zeros(arch[i + 1], 1));
             }

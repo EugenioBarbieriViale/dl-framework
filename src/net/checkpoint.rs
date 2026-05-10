@@ -10,8 +10,8 @@ use std::path::Path;
 
 impl Net {
     #[allow(unused)]
-    pub fn predict_raw(&mut self, x: &DMatrix<f64>) -> DMatrix<f64> {
-        self.forward(x)
+    pub fn predict_raw(&self, x: &DMatrix<f64>) -> DMatrix<f64> {
+        self.forward(x).0.last().unwrap().clone()
     }
 
     #[allow(unused)]
@@ -22,7 +22,7 @@ impl Net {
         ) {
             println!("Softmax non detected, are you sure your output is a probability vector?");
         }
-        one_hot_decode(&self.forward(x))
+        one_hot_decode(&self.forward(x).0.last().unwrap())
     }
 
     #[allow(unused)]

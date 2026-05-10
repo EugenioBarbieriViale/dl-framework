@@ -1,6 +1,6 @@
 # Deep Learning Framework in Rust
 # Compelling
-- Inizialize nabla with NetParams
+- Create allocate function for vector of matrices
 - Implement softmax decently
 - Option batches, if None don't use them
 - Use Rayon for multi threadding across batches

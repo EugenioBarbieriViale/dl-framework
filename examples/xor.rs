@@ -18,15 +18,15 @@ fn main() {
 
     let arch = vec![2, 2, 1];
 
-    let hypp = Hyperparams::new(10000, 1, 0.7);
+    let hypp = Hyperparams::new(100000, 1, 0.7);
     let loss_func = LossFunction::SquaredError;
     let act_funcs = vec![ActivationFunction::Sigmoid; 2];
     let init = Initialization::Random;
 
     let mut net = Net::new(arch, act_funcs, loss_func, &init);
 
-    net.batch_seq_train(&data, &label, &hypp);
-    // net.par_train(&data, &label, &hypp);
+    // net.batch_seq_train(&data, &label, &hypp);
+    net.par_train(&data, &label, &hypp);
 
     let path = Path::new("/home/eu/programming/smart-metal/models/xor.json");
 
