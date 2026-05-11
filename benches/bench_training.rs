@@ -11,7 +11,7 @@ use std::hint::black_box;
 pub fn criterion_benchmark(c: &mut Criterion) {
     let len = 2048;
     let batch_size = 64;
-    let epochs = 10;
+    let epochs = 2;
 
     let arch = vec![2, 256, 256, 1];
 

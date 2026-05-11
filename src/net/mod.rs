@@ -3,6 +3,7 @@ use functions::*;
 // use hyperparams::*;
 
 use nalgebra::DMatrix;
+use rand::distr::weighted;
 use serde::{Deserialize, Serialize};
 
 pub mod checkpoint;
@@ -20,8 +21,10 @@ pub struct NetParams {
 
 impl NetParams {
     pub fn new(arch: &Vec<usize>, layers: usize, init: &Initialization) -> Self {
-        let mut weights = Vec::new();
-        let mut biases = Vec::new();
+        // let mut weights = Vec::new();
+        // let mut biases = Vec::new();
+        let mut weights = Vec::with_capacity(layers);
+        let mut biases = Vec::with_capacity(layers);
 
         for i in 0..layers {
             let c = arch[i];

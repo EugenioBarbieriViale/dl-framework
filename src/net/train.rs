@@ -5,25 +5,40 @@ use super::hyperparams::Hyperparams;
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
+// struct Buffer {
+//     zs: Vec<DMatrix<f64>>,
+//     activations: Vec<DMatrix<f64>>,
+// }
+
 impl Net {
     pub fn forward(&self, x: &DMatrix<f64>) -> (Vec<DMatrix<f64>>, Vec<DMatrix<f64>>) {
-        let mut activations = Vec::with_capacity(self.layers + 1);
-        let mut zs = Vec::with_capacity(self.layers);
+        let mut activations: Vec<DMatrix<f64>> = self
+            .activations
+            .clone()
+            .into_iter()
+            .map(|m| {
+                let mut a = m;
+                for e in a.iter_mut() {
+                    *e = 0.0
+                }
+                a
+            })
+            .collect();
 
-        for i in 0..self.layers {
-            activations.push(DMatrix::zeros(
-                self.params.weights[i].nrows(),
-                self.params.weights[i].ncols(),
-            ));
-            zs.push(DMatrix::zeros(
-                self.params.biases[i].nrows(),
-                self.params.biases[i].ncols(),
-            ));
-        }
-        activations.push(DMatrix::zeros(
-            self.params.weights[1].nrows(),
-            self.params.weights[1].ncols(),
-        ));
+        let mut zs: Vec<DMatrix<f64>> = self
+            .activations
+            .clone()
+            .into_iter()
+            .map(|m| {
+                let mut a = m;
+                for e in a.iter_mut() {
+                    *e = 0.0
+                }
+                a
+            })
+            .collect();
+
+        // let mut zs = self.zs.clone();
 
         activations[0] = x.clone();
 
