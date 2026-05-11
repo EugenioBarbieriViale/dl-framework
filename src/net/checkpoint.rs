@@ -1,4 +1,5 @@
 use super::Net;
+use super::buffer::Buffer;
 use super::functions::ActivationFunction;
 use super::load_mnist::one_hot_decode;
 
@@ -11,7 +12,9 @@ use std::path::Path;
 impl Net {
     #[allow(unused)]
     pub fn predict_raw(&self, x: &DMatrix<f64>) -> DMatrix<f64> {
-        self.forward(x).0.last().unwrap().clone()
+        let mut buff = Buffer::alloc(&self.arch, self.layers);
+        self.forward(x, &mut buff);
+        buff.activations.last().unwrap().clone()
     }
 
     #[allow(unused)]
@@ -22,7 +25,7 @@ impl Net {
         ) {
             println!("Softmax non detected, are you sure your output is a probability vector?");
         }
-        one_hot_decode(&self.forward(x).0.last().unwrap())
+        one_hot_decode(&self.predict_raw(x))
     }
 
     #[allow(unused)]

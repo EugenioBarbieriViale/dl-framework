@@ -26,6 +26,7 @@ fn main() {
 
     let mut net = Net::new(arch, act_funcs, loss_func, &init);
 
+    // net.seq_train(&data, &label, &hypp);
     // net.batch_seq_train(&data, &label, &hypp);
     net.par_train(&data, &label, &hypp);
 
