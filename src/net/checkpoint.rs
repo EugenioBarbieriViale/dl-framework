@@ -18,7 +18,7 @@ impl Net {
     }
 
     #[allow(unused)]
-    pub fn predict_prob(&mut self, x: &DMatrix<f64>) -> usize {
+    pub fn predict_prob(&self, x: &DMatrix<f64>) -> usize {
         if !matches!(
             self.act_functions[self.layers - 1],
             ActivationFunction::Softmax
@@ -26,6 +26,21 @@ impl Net {
             println!("Softmax non detected, are you sure your output is a probability vector?");
         }
         one_hot_decode(&self.predict_raw(x))
+    }
+
+    #[allow(unused)]
+    pub fn test(&self, data: &Vec<DMatrix<f64>>, classes: &Vec<DMatrix<f64>>) -> f64 {
+        let mut res = 0.0;
+        for (x, y) in data.iter().zip(classes) {
+            let out = self.predict_prob(x);
+            let y = one_hot_decode(y);
+
+            if out == y {
+                res += 1.0;
+            }
+        }
+
+        res / data.len() as f64
     }
 
     #[allow(unused)]

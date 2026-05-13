@@ -107,7 +107,7 @@ impl Net {
                     self.update_params(&buff, hypp.learning_rate / hypp.batch_size as f64);
                 });
             cost /= len as f64;
-            println!("Epoch {e}: loss = {}", cost);
+            // println!("Epoch {e}: loss = {}", cost);
         }
     }
 

@@ -24,3 +24,7 @@
 - Introduce batches
 - Change parameters inizialization, as it affects net performance and benchmarks
 - Use Rayon for multi threadding across batches
+
+# Models' results
+- mnist: Accuracy of 96.39666666666666 %
+- new_mnist: Accuracy of 99.05166666666668 %

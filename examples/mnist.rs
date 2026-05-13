@@ -1,13 +1,10 @@
-use nalgebra::DMatrix;
 use smartmetal::net::Net;
 use smartmetal::net::functions::{ActivationFunction, LossFunction};
 use smartmetal::net::hyperparams::*;
-use smartmetal::net::load_mnist::{load_data, one_hot_decode};
+use smartmetal::net::init::*;
+use smartmetal::net::load_mnist::load_data;
 
 use std::path::Path;
-
-// mnist: Accuracy of 96.39666666666666 %
-// new_mnist: Accuracy of 99.05166666666668 %
 
 fn main() {
     let data =
@@ -34,20 +31,6 @@ fn main() {
     //     .expect(&format!("Failed to save to {:?}", model_path));
     net.load_from(model_path).expect("Model not found");
 
-    let accuracy = test(&mut net, &data.images, &data.classes);
+    let accuracy = net.test(&data.images, &data.classes);
     println!("Accuracy of {} %", accuracy * 100.0);
-}
-
-fn test(net: &mut Net, data: &Vec<DMatrix<f64>>, classes: &Vec<DMatrix<f64>>) -> f64 {
-    let mut res = 0.0;
-    for (x, y) in data.iter().zip(classes) {
-        let out = net.predict_prob(x);
-        let y = one_hot_decode(y);
-
-        if out == y {
-            res += 1.0;
-        }
-    }
-
-    res / data.len() as f64
 }

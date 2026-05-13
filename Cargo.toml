@@ -15,18 +15,23 @@ nalgebra = { version = "0.34.2", features = [
   "rand",
   "serde-serialize",
 ] }
+matrixmultiply = { version = "0.3.10", features = ["threading"] }
+
 rand = "0.10.1"
 rand_distr = "0.6.0"
-flate2 = "1.1.5"
-byteorder = "1.5.0"
+
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-matrixmultiply = { version = "0.3.10", features = ["threading"] }
+
 rayon = "1.12.0"
+
+flate2 = "1.1.5"
+byteorder = "1.5.0"
 
 [dev-dependencies]
 criterion = "0.8.2"
 
 [[bench]]
-name = "bench_training"
+# name = "synthetic"
+name = "mnist"
 harness = false
