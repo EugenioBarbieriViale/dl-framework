@@ -26,14 +26,14 @@ fn main() {
 
     let mut net = Net::new(arch, act_funcs, loss_func, &init);
     println!("Neural network has been initialized\n");
+    println!("This is main indeed");
 
-    // net.seq_train(&data.images, &data.classes, &params);
+    net.par_train(&data.images, &data.classes, &params);
+
     // net.save_to(model_path)
     //     .expect(&format!("Failed to save to {:?}", model_path));
-    net.load_from(model_path).expect("Model not found");
+    // net.load_from(model_path).expect("Model not found");
 
-    let idx = 1098;
-    let out = net.predict_prob(&data.images[idx]);
-    println!("Prediction: {}", &out);
-    println!("Actual value: {}", one_hot_decode(&data.classes[idx]));
+    let accuracy = net.test(&data.images, &data.classes);
+    println!("Accuracy of {} %", accuracy * 100.0);
 }

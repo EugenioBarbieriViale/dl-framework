@@ -4,6 +4,8 @@ use super::Net;
 use super::functions::*;
 use super::hyperparams::Hyperparams;
 
+use std::sync::{Arc, Mutex};
+
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
@@ -87,6 +89,40 @@ impl Net {
         }
     }
 
+    fn batch_train_2(
+        &self,
+        cost: &mut Arc<Mutex<f64>>,
+        x_batch: &[DMatrix<f64>],
+        y_batch: &[DMatrix<f64>],
+        buff: &mut Arc<Mutex<Buffer>>,
+    ) {
+        buff.lock().unwrap().zero_grad(self.layers);
+        x_batch
+            .par_iter()
+            .zip_eq(y_batch.par_iter())
+            .for_each(|(xi, yi)| {
+                // let mut local_buff = Buffer::alloc(&self.arch, self.layers);
+                let mut local_buff = buff.lock().unwrap();
+
+                self.forward(xi, &mut local_buff);
+
+                let out = local_buff.activations[self.layers].clone();
+                let sample_cost = self.loss_function.compute(&out, yi);
+
+                self.backward(yi, &out, &mut local_buff);
+
+                let mut cost = cost.lock().unwrap();
+                *cost += sample_cost;
+
+                for i in 0..self.layers {
+                    let acc_nabla_w = local_buff.nabla_w[i].clone();
+                    let acc_nabla_b = local_buff.nabla_b[i].clone();
+                    local_buff.nabla_w[i] += acc_nabla_w;
+                    local_buff.nabla_b[i] += acc_nabla_b;
+                }
+            })
+    }
+
     pub fn par_train(
         &mut self,
         data: &Vec<DMatrix<f64>>,
@@ -96,18 +132,24 @@ impl Net {
         let len = data.len();
         assert_eq!(len, classes.len());
 
-        let mut buff = Buffer::alloc(&self.arch, self.layers);
+        let mut buff = Arc::new(Mutex::new(Buffer::alloc(&self.arch, self.layers)));
 
         for e in 0..hypp.epochs {
-            let mut cost = 0.0;
+            let mut cost = Arc::new(Mutex::new(0.0));
+
             data.chunks(hypp.batch_size)
                 .zip(classes.chunks(hypp.batch_size))
                 .for_each(|(x_batch, y_batch)| {
-                    self.batch_train(&mut cost, x_batch, y_batch, &mut buff);
-                    self.update_params(&buff, hypp.learning_rate / hypp.batch_size as f64);
+                    // self.batch_train(&mut cost, x_batch, y_batch, &mut buff);
+                    // self.update_params(&buff, hypp.learning_rate / hypp.batch_size as f64);
+                    self.batch_train_2(&mut cost, x_batch, y_batch, &mut buff);
+                    self.update_params(
+                        &buff.lock().unwrap(),
+                        hypp.learning_rate / hypp.batch_size as f64,
+                    );
                 });
-            cost /= len as f64;
-            // println!("Epoch {e}: loss = {}", cost);
+            *cost.lock().unwrap() /= len as f64;
+            println!("Epoch {e}: loss = {}", *cost.lock().unwrap());
         }
     }
 
