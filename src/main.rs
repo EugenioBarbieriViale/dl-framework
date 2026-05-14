@@ -18,7 +18,7 @@ fn main() {
 
     let arch = vec![28 * 28, 512, 512, 10];
 
-    let params = Hyperparams::new(1, 32, 1e-2);
+    let params = Hyperparams::new(5, 32, 1e-2);
     let loss_func = LossFunction::CrossEntropy;
     let mut act_funcs = vec![ActivationFunction::ReLU; 2];
     act_funcs.push(ActivationFunction::Softmax);
@@ -34,6 +34,12 @@ fn main() {
     //     .expect(&format!("Failed to save to {:?}", model_path));
     // net.load_from(model_path).expect("Model not found");
 
-    let accuracy = net.test(&data.images, &data.classes);
-    println!("Accuracy of {} %", accuracy * 100.0);
+    let n = 3;
+    let mut tot_acc = 0.0;
+    for i in 0..n {
+        let a = net.test(&data.images, &data.classes);
+        tot_acc += a;
+        println!("Test {} passed with accuracy of {}%", i, a * 100.0);
+    }
+    println!("Final accuracy of {} %", tot_acc * 100.0 / n as f64);
 }
