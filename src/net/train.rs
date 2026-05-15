@@ -47,36 +47,6 @@ impl Net {
         }
     }
 
-    fn backward_fr(&self, y: &DMatrix<f64>, out: &DMatrix<f64>, buff: &mut Buffer) {
-        let loss_grad = self.loss_function.gradient(out, y);
-
-        let mut delta = if matches!(
-            self.act_functions[self.layers - 1],
-            ActivationFunction::Softmax
-        ) {
-            // compute softmax
-            let s = out;
-            let dot: f64 = s.component_mul(&loss_grad).sum();
-            s.component_mul(&(&loss_grad - DMatrix::from_element(s.nrows(), 1, dot)))
-        } else {
-            let activation_deriv =
-                self.act_functions[self.layers - 1].derivative(&buff.zs[self.layers - 1]);
-            loss_grad.component_mul(&activation_deriv)
-        };
-
-        buff.nabla_w[self.layers - 1] += &delta * buff.activations[self.layers - 1].transpose();
-        buff.nabla_b[self.layers - 1] += delta.clone();
-
-        for l in (0..self.layers - 1).rev() {
-            delta = self.params.weights[l + 1].transpose() * &delta;
-            let activation_deriv = self.act_functions[l].derivative(&buff.zs[l]);
-            delta = delta.component_mul(&activation_deriv);
-
-            buff.nabla_w[l] += &delta * buff.activations[l].transpose();
-            buff.nabla_b[l] += delta.clone();
-        }
-    }
-
     fn update_params(&mut self, buff: &Buffer, learning_rate: f64) {
         for l in 0..self.layers {
             self.params.weights[l] -= &buff.nabla_w[l] * learning_rate;
@@ -95,15 +65,15 @@ impl Net {
             .par_iter()
             .zip_eq(y_batch.par_iter())
             .map(|(xi, yi)| {
-                let mut buff = Buffer::alloc(&self.arch, self.layers);
+                let mut local_buff = Buffer::alloc(&self.arch, self.layers);
 
-                self.forward(xi, &mut buff);
+                self.forward(xi, &mut local_buff);
 
-                let out = buff.activations[self.layers].clone();
+                let out = local_buff.activations[self.layers].clone();
                 let cost = self.loss_function.compute(&out, yi);
 
-                self.backward(yi, &out, &mut buff);
-                (cost, buff.nabla_w, buff.nabla_b)
+                self.backward(yi, &out, &mut local_buff);
+                (cost, local_buff.nabla_w, local_buff.nabla_b)
             })
             .collect();
 
@@ -114,56 +84,6 @@ impl Net {
                 buff.nabla_w[i] += &nw[i];
                 buff.nabla_b[i] += &nb[i];
             }
-        }
-    }
-
-    fn batch_train_fr(
-        &self,
-        cost: &mut f64,
-        x_batch: &[DMatrix<f64>],
-        y_batch: &[DMatrix<f64>],
-        buff: &mut Buffer,
-    ) {
-        buff.zero_grad(self.layers);
-
-        let (total_cost, final_buffer) = x_batch
-            .par_iter()
-            .zip_eq(y_batch.par_iter())
-            .fold(
-                || {
-                    let mut local_buff = Buffer::alloc(&self.arch, self.layers);
-                    // local_buff.zero_grad(self.layers);
-                    (0.0_f64, local_buff)
-                },
-                |(mut acc_cost, mut local_buff), (xi, yi)| {
-                    self.forward(xi, &mut local_buff);
-                    let out = local_buff.activations[self.layers].clone();
-                    acc_cost += self.loss_function.compute(&out, yi);
-                    self.backward_fr(yi, &out, &mut local_buff);
-
-                    (acc_cost, local_buff)
-                },
-            )
-            .reduce(
-                || {
-                    let mut id = Buffer::alloc(&self.arch, self.layers);
-                    id.zero_grad(self.layers);
-                    (0.0_f64, id)
-                },
-                |(mut cost_a, mut buf_a), (cost_b, buf_b)| {
-                    cost_a += cost_b;
-                    for i in 0..buf_a.nabla_w.len() {
-                        buf_a.nabla_w[i] += &buf_b.nabla_w[i];
-                        buf_a.nabla_b[i] += &buf_b.nabla_b[i];
-                    }
-                    (cost_a, buf_a)
-                },
-            );
-
-        *cost += total_cost;
-        for i in 0..buff.nabla_w.len() {
-            buff.nabla_w[i] += &final_buffer.nabla_w[i];
-            buff.nabla_b[i] += &final_buffer.nabla_b[i];
         }
     }
 
@@ -184,30 +104,6 @@ impl Net {
                 .zip(classes.chunks(hypp.batch_size))
                 .for_each(|(x_batch, y_batch)| {
                     self.batch_train(&mut cost, x_batch, y_batch, &mut buff);
-                    self.update_params(&buff, hypp.learning_rate / hypp.batch_size as f64);
-                });
-            cost /= len as f64;
-            // println!("Epoch {e}: loss = {}", *cost.lock().unwrap());
-        }
-    }
-
-    pub fn par_train_fr(
-        &mut self,
-        data: &Vec<DMatrix<f64>>,
-        classes: &Vec<DMatrix<f64>>,
-        hypp: &Hyperparams,
-    ) {
-        let len = data.len();
-        assert_eq!(len, classes.len());
-
-        let mut buff = Buffer::alloc(&self.arch, self.layers);
-
-        for e in 0..hypp.epochs {
-            let mut cost = 0.0;
-            data.chunks(hypp.batch_size)
-                .zip(classes.chunks(hypp.batch_size))
-                .for_each(|(x_batch, y_batch)| {
-                    self.batch_train_fr(&mut cost, x_batch, y_batch, &mut buff);
                     self.update_params(&buff, hypp.learning_rate / hypp.batch_size as f64);
                 });
             cost /= len as f64;
