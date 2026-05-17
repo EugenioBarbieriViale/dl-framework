@@ -15,9 +15,11 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         data.images.len()
     );
 
+    println!("Benching over the mnist dataset");
+
     let arch = vec![28 * 28, 512, 512, 10];
 
-    let hypp = Hyperparams::new(1, 512, 1e-2);
+    let hypp = Hyperparams::new(1, 64, 1e-2);
     let loss_func = LossFunction::CrossEntropy;
     let mut act_funcs = vec![ActivationFunction::ReLU; 2];
     act_funcs.push(ActivationFunction::Softmax);

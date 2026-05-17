@@ -33,6 +33,5 @@ criterion = "0.8.2"
 
 [[bench]]
 # name = "synthetic"
-# name = "mnist"
-name = "fold_reduce"
+name = "mnist"
 harness = false

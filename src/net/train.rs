@@ -111,6 +111,7 @@ impl Net {
         }
     }
 
+    // does not work because backward simply overwrites
     pub fn batch_seq_train(
         &mut self,
         data: &Vec<DMatrix<f64>>,

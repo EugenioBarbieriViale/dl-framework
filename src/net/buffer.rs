@@ -3,6 +3,7 @@ use crate::net::init::Initialization;
 
 use nalgebra::DMatrix;
 
+#[derive(Clone)]
 pub struct Buffer {
     pub zs: Vec<DMatrix<f64>>,
     pub activations: Vec<DMatrix<f64>>,
